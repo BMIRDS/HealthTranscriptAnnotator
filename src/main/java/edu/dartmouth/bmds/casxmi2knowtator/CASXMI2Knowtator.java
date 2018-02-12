@@ -43,6 +43,8 @@ public class CASXMI2Knowtator {
 	        
 				outputDirectory = new File(line.getOptionValue("o"));
 				System.out.println("output directory = " + outputDirectory.getCanonicalPath());
+				
+				
 	        }
 	        catch (IOException e) {
 				// TODO Auto-generated catch block
