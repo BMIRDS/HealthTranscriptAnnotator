@@ -1,9 +1,10 @@
 package edu.dartmouth.bmds.casxmi2knowtator;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+
+import edu.dartmouth.bmds.util.file.*;
 
 import org.apache.commons.cli.*;
 
@@ -44,7 +45,13 @@ public class CASXMI2Knowtator {
 				outputDirectory = new File(line.getOptionValue("o"));
 				System.out.println("output directory = " + outputDirectory.getCanonicalPath());
 				
+				FilenameFilter filter = new FilenameExtensionFilter("xpi");
 				
+				File[] inputFiles = inputDirectory.listFiles(filter);
+				
+				for (int i = 0; i < inputFiles.length; i++) {
+					System.out.println("input file[" + i + "] = " + inputFiles[i].getCanonicalPath());
+				}
 	        }
 	        catch (IOException e) {
 				// TODO Auto-generated catch block
