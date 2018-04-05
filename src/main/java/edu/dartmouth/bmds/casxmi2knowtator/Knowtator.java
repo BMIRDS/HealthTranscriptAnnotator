@@ -1,4 +1,4 @@
-package knowtator;
+package edu.dartmouth.bmds.casxmi2knowtator;
 
 import java.util.Scanner;
 import java.io.FileNotFoundException;
@@ -29,6 +29,7 @@ class Knowtator {
 		
 		XMLOutputFactory xof = XMLOutputFactory.newInstance();
 		XMLStreamWriter xsw = null;
+		FileWriter fw = null;
 		
 		try {			
 			// Get list of files in transcript input folder
@@ -39,71 +40,89 @@ class Knowtator {
 				for (File transcriptFile : transcriptInputFolderDirectoryListing) {
 					System.out.println(transcriptFile.getName());
 					
-					// Create transcript scanner and add text to char buffer
-					transcriptScanner = new Scanner(transcriptFile);
-					String transcriptString = transcriptScanner.nextLine();
-					while (transcriptScanner.hasNextLine()) {
-						transcriptString = transcriptString + "\n" +transcriptScanner.nextLine();
+					if (transcriptFile.exists()) {
+						// Create transcript scanner and add text to char buffer
+						transcriptScanner = new Scanner(transcriptFile);
+						String transcriptString = transcriptScanner.nextLine();
+						while (transcriptScanner.hasNextLine()) {
+							transcriptString = transcriptString + "\n" + transcriptScanner.nextLine();
+						}
+						char[] charbuff = transcriptString.toCharArray();
+
+						// Get path of casXMI folder and knowtator output folder
+						String casXmiFolderPath = casXmiInputFolder.getAbsolutePath();
+						String knowtatorXmlFolderPath = knowtatorXmlOutputFolder.getAbsolutePath();
+
+						// Get name of transcript file and corresponding names for casXMI file and
+						// knowtator file
+						String transcriptFileName = transcriptFile.getName();
+						System.out.println(transcriptFileName);
+						String casXmiFileName = casXmiFolderPath + "/" + transcriptFileName + ".xmi";
+						System.out.println(casXmiFileName);
+						String knowtatorXmlFileName = knowtatorXmlFolderPath + "/" + transcriptFileName
+								+ ".knowtator.xml";
+
+						// Create casXMI file and get its creation date of
+						File casXmiFile = new File(casXmiFileName);
+						
+						if (casXmiFile.exists()) {
+							String creationDate = formatCreationDate(casXmiFile);
+
+							// Create new knowtator file
+							File knowtatorXmlFile = new File(knowtatorXmlFileName);
+							knowtatorXmlFile.createNewFile();
+
+							// Create XMLStreamWriter for knowtator file and start document
+							fw = new FileWriter(knowtatorXmlFile);
+							xsw = xof.createXMLStreamWriter(fw);
+							xsw.writeStartDocument("utf-8", "1.0");
+							xsw.writeCharacters("\n");
+							xsw.writeStartElement("annotations");
+							xsw.writeAttribute("textsource", transcriptFileName);
+
+							// Create scanner for casXMI file and scan for Mentions
+							casXmiScanner = new Scanner(casXmiFile, "UTF-8");
+							casXmiScanner.useDelimiter("<textsem:");
+
+							String line = casXmiScanner.next();
+
+							while (casXmiScanner.hasNext()) {
+								line = casXmiScanner.next().toString();
+
+								if (line.contains("Mention xmi:")) {
+									int index = line.indexOf(">");
+
+									String resultLine = line.substring(0, index);
+
+									// Get necessary text to create knowtator annotation from line
+									ArrayList<String> textArray = getTexts(resultLine, charbuff, creationDate);
+
+									// Make annotation from line
+									annotate(xsw, textArray);
+								}
+							}
+
+							// End document
+							xsw.writeCharacters("\n");
+							xsw.writeEndElement();
+							//System.out.println("writeEndElement() called");
+							
+							xsw.flush();
+							fw.flush();
+							xsw.close();
+							fw.close();
+							xsw = null;
+							fw = null;
+						}
 					}
-					char[] charbuff = transcriptString.toCharArray();
-					
-					// Get path of casXMI folder and knowtator output folder
-					String casXmiFolderPath = casXmiInputFolder.getAbsolutePath();
-					String knowtatorXmlFolderPath = knowtatorXmlOutputFolder.getAbsolutePath();
-					
-					// Get name of transcript file and corresponding names for casXMI file and knowtator file
-					String transcriptFileName = transcriptFile.getName();
-					System.out.println(transcriptFileName);
-					String casXmiFileName = casXmiFolderPath + "/" + transcriptFileName + ".xmi";		
-					System.out.println(casXmiFileName);
-					String knowtatorXmlFileName = knowtatorXmlFolderPath + "/" + transcriptFileName + ".xmi.knowtator.xml";
-					
-				 	// Create casXMI file and get its creation date of
-					File casXmiFile = new File(casXmiFileName);
-					String creationDate = formatCreationDate(casXmiFile);
-					
-					// Create new knowtator file
-					File knowtatorXmlFile = new File(knowtatorXmlFileName);
-					knowtatorXmlFile.createNewFile();
-					
-					// Create XMLStreamWriter for knowtator file and start document
-					xsw = xof.createXMLStreamWriter(new FileWriter(knowtatorXmlFile));
-					xsw.writeStartDocument("utf-8", "1.0");
-					xsw.writeCharacters("\n");
-					xsw.writeStartElement("annotations");
-			        	xsw.writeAttribute("textsource", transcriptFileName);
-			        
-			        	// Create scanner for casXMI file and scan for Mentions
-					casXmiScanner = new Scanner(casXmiFile, "UTF-8");
-					casXmiScanner.useDelimiter("<textsem:");
-					
-	    				String line = casXmiScanner.next();
-	    				
-	    				while (casXmiScanner.hasNext()) {
-		    	        		line = casXmiScanner.next().toString();
-		    	        		
-		    	        		if (line.contains("Mention xmi:")) {
-		    	        			int index = line.indexOf(">");
-		    	        			
-		    	        			String resultLine = line.substring(0, index);		    	        
-		    	        			
-		    		        		// Get necessary text to create knowtator annotation from line
-		    	        			ArrayList <String> textArray = getTexts(resultLine, charbuff, creationDate);		    		        		
-		    	        			
-		    	        			// Make annotation from line
-		    		        		annotate(xsw, textArray);
-		    	        		}
-	    	        		}
-	    				
-	    				// End document
-	    				xsw.writeCharacters("\n");
-	    	    			xsw.writeEndElement();
 				}
 			}
 		}
-		
-			
+		catch (Exception e) {
+			e.printStackTrace(System.err);
+		}
 		finally {
+			//System.out.println("finally block entered");
 			if (casXmiScanner!= null) {
 				casXmiScanner.close();
 			}
@@ -113,10 +132,17 @@ class Knowtator {
 				xsw.close();
 			}
 			
+			if (fw != null) {
+				fw.flush();
+				fw.close();
+			}
+			
 			if (transcriptScanner != null) {
 				transcriptScanner.close();
 			}
 		}
+		//System.out.println("end createKnowtator");
+
 	}
 	
 	// Method to format creation date of file

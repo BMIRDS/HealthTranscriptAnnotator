@@ -1,4 +1,4 @@
-package knowtator;
+package edu.dartmouth.bmds.casxmi2knowtator;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,9 +12,9 @@ public class KnowtatorTest {
 		Knowtator kt = new Knowtator();
 		
 		try {
-			File transcriptInputFolder = new File("transcriptInputFolder");
-			File casXmiInputFolder = new File("casXmiInputFolder");
-			File knowtatorXmlOutputFolder = new File("knowtatorXmlOutputFolder");
+			File transcriptInputFolder = new File("/Volumes/ORALS_AnnotationData/input");
+			File casXmiInputFolder = new File("/Volumes/ORALS_AnnotationData/output");
+			File knowtatorXmlOutputFolder = new File("/Volumes/ORALS_AnnotationData/knowtatorOutput");
 			
 //			File transcriptInputFolder = new File(args[0]);
 //			File casXmiInputFolder = new File(args[1]);
