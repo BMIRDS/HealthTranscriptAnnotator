@@ -18,9 +18,9 @@ public class Annotation {
 	
 	//private long idValue = 0;
 	
-	public Annotation(String name) {
+	public Annotation(String className) {
 	//	this.id = newId();
-		this.annotatonClassName = name;
+		this.annotatonClassName = className;
 		attributes = new HashSetValuedHashMap<String, String>();
 	}
  	
