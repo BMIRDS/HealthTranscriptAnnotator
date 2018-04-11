@@ -25,7 +25,7 @@ public class KnowtatorUtil {
 		return dateFormatter.format(date);
 	}
 
-	public static void writeAnnotatedTexts(XMLStreamWriter xsw, List<AnnotatedText> annotatedTexts, String annotatedTextFileName) throws XMLStreamException {
+	public static void writeAnnotatedTexts(XMLStreamWriter xsw, Iterable<AnnotatedText> annotatedTexts, String annotatedTextFileName) throws XMLStreamException {
 		xsw.writeStartElement("annotations");
 		xsw.writeAttribute("textsource", annotatedTextFileName);
 		

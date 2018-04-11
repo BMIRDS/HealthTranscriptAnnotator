@@ -47,7 +47,7 @@ public class Annotation {
 				ids.add(id);
 				
 				xsw.writeStartElement("stringSlotMention");
-				xsw.writeAttribute("id", annotatedText.getId());
+				xsw.writeAttribute("id", id);
 				
 				xsw.writeStartElement("mentionSlot");
 				xsw.writeAttribute("id", name);
