@@ -12,7 +12,7 @@ public class AnnotatedText {
 	private long spanEnd;
 	private String spannedText;
 	private String annotatorId = "cTAKES_4.0.0";
-	private String annotator = "cTAKES";
+	private String annotator = "cTAKES_no_common";
 	private Date creationDate = new Date();
 	
 	private Annotation annotation = null;
@@ -46,9 +46,17 @@ public class AnnotatedText {
 			this.annotation = new Annotation(annotatonClassName);
 		}
 		else {
-			throw new RuntimeException("Runtime Exception: adding more than one annotation to this object is not implemented");
+			System.err.println("Error: adding more than one annotation to this object is not implemented");
+			System.err.println("Fix this, if possible!!!");
+			System.err.println("Fix this, if possible!!!");
+
+			//throw new RuntimeException("Runtime Exception: adding more than one annotation to this object is not implemented");
 		}
 		
+		return annotation;
+	}
+	
+	public Annotation getAnnotation() {
 		return annotation;
 	}
 	

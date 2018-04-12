@@ -23,6 +23,10 @@ public class Annotation {
 		this.annotatonClassName = className;
 		attributes = new HashSetValuedHashMap<String, String>();
 	}
+	
+	public String getAnnotationClass() {
+		return annotatonClassName;
+	}
  	
 	public boolean addAttribute(String name, String value) {
 		
