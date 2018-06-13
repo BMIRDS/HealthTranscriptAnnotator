@@ -12,7 +12,7 @@ public class AnnotatedText {
 	private long spanEnd;
 	private String spannedText;
 	private String annotatorId = "cTAKES_4.0.0";
-	private String annotator = "cTAKES_no_common";
+	private String annotator = "cTAKES";
 	private Date creationDate = new Date();
 	
 	private Annotation annotation = null;
@@ -66,6 +66,14 @@ public class AnnotatedText {
 	
 	public String getSpannedText() {
 		return spannedText;
+	}
+	
+	public String getAnnotator() {
+		return annotator;
+	}
+	
+	public void setAnnotator(String annotator) {
+		this.annotator = annotator;
 	}
 	
 	public void writeKnowtator(XMLStreamWriter xsw) throws XMLStreamException {

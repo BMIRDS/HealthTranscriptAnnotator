@@ -30,6 +30,7 @@ import org.apache.ctakes.typesystem.type.structured.DocumentPath;
 import org.apache.ctakes.typesystem.type.textsem.AnatomicalSiteMention;
 import org.apache.ctakes.typesystem.type.textsem.EventMention;
 import org.apache.ctakes.typesystem.type.textsem.MedicationMention;
+import org.apache.ctakes.typesystem.type.textspan.Sentence;
 import org.apache.uima.UIMAException;
 import org.apache.uima.UIMAFramework;
 import org.apache.uima.analysis_engine.AnalysisEngine;
@@ -55,6 +56,9 @@ public class CASXMI2Knowtator {
 
 	private static HashMap<String, SortedMap<String, Integer>> termSummaryMap = new HashMap<String, SortedMap<String, Integer>>();
 	
+	// "T116", "T125", "T131"?
+	// "T129", "T195" May 7,2018
+	protected static String[] tuiToFilter = {"T122", "T123", "T197"};
 	
 	public static void addAnnotationsToSummary(Iterable<AnnotatedText> annotatedTexts) {
 		Iterator<AnnotatedText> annotatedTextIterator = annotatedTexts.iterator();
@@ -276,6 +280,7 @@ public class CASXMI2Knowtator {
 		// create the Options
 		Options options = new Options();
 		options.addOption("h", "help", false, "Print this message");
+		options.addOption("e", "exclude", false, "Exclude words in ExcludeWords.txt");
 		options.addRequiredOption("i", "inputDirectory", true, "Directory containing the CAS XPI files to be converted");
 		options.addRequiredOption("o", "outputDirectory", true, "Directory where converted CAS XPI files will be stored in the Knowtator format");
 		
@@ -292,119 +297,54 @@ public class CASXMI2Knowtator {
 	        File outputDirectory = null;
 	        
 	        try {
-	        		inputDirectory = new File(line.getOptionValue("i"));
+	        	inputDirectory = new File(line.getOptionValue("i"));
 				System.out.println("input directory = " + inputDirectory.getCanonicalPath());
 			
 	        
 				outputDirectory = new File(line.getOptionValue("o"));
 				System.out.println("output directory = " + outputDirectory.getCanonicalPath());
+				if (!outputDirectory.exists()) {
+					outputDirectory.mkdirs();
+				}
 				
 				System.out.println("trying new stuff");
 
 				TreeSet<String> excludeWords = new TreeSet<String>();
 				TreeSet<String> wordsExcluded = new TreeSet<String>();
-				
-				excludeWords.add("hmm");
-				excludeWords.add("tum");
-				
-				File excludeWordsFile = new File(inputDirectory, "ExcludeWords.txt");
-				
-				if (excludeWordsFile.exists()) {
-					List<String> words = Files.readAllLines(excludeWordsFile.toPath(), StandardCharsets.UTF_8);
+								
+				if (line.hasOption("e")) {
 
-					for (String word : words) {
-						excludeWords.add(word.trim().toLowerCase());
+					File commonWordsFile = new File(inputDirectory, "CommonWords.txt");
+
+					if (commonWordsFile.exists()) {
+						List<String> words = Files.readAllLines(commonWordsFile.toPath(), StandardCharsets.UTF_8);
+
+						for (String word : words) {
+							excludeWords.add(word.trim().toLowerCase());
+						}
 					}
-					excludeWords.remove("addiction");
-					excludeWords.remove("aids");
-					excludeWords.remove("allergy");
-					excludeWords.remove("ambien");
-					excludeWords.remove("anxiety");
-					excludeWords.remove("appendix");
-					excludeWords.remove("arm");
-					excludeWords.remove("arms");
-					excludeWords.remove("arthritis");
-					excludeWords.remove("bacteria");
-					excludeWords.remove("belly");
-					excludeWords.remove("bleeding");
-					excludeWords.remove("blood");
-					excludeWords.remove("bone");
-					excludeWords.remove("bones");
-					excludeWords.remove("brain");
-					excludeWords.remove("breast");
-					excludeWords.remove("breasts");
-					excludeWords.remove("breathing");
-					excludeWords.remove("burn");
-					excludeWords.remove("burning");
-					excludeWords.remove("burns");
-					excludeWords.remove("cancer");
-					excludeWords.remove("cardiac");
-					excludeWords.remove("cholesterol");
-					excludeWords.remove("cialis");
-					excludeWords.remove("colon");
-					excludeWords.remove("cut");
-					excludeWords.remove("cuts");
-					excludeWords.remove("cvs");
-					excludeWords.remove("dead");
-					excludeWords.remove("death");
-					excludeWords.remove("depression");
-					excludeWords.remove("diabetes");
-					excludeWords.remove("diagnosis");
-					excludeWords.remove("die");
-					excludeWords.remove("disability");
-					excludeWords.remove("disease");
-					excludeWords.remove("drop");
-					excludeWords.remove("drops");
-					excludeWords.remove("drug");
-					excludeWords.remove("drugs");
-					excludeWords.remove("ear");
-					excludeWords.remove("ears");
-					excludeWords.remove("ejaculation");
-					excludeWords.remove("enzyme");
-					excludeWords.remove("exercise");
-					excludeWords.remove("exercises");
-					excludeWords.remove("eye");
-					excludeWords.remove("eyes");
-					excludeWords.remove("face");
-					excludeWords.remove("facial");
-					excludeWords.remove("feel");
-					excludeWords.remove("finding");
-					excludeWords.remove("finger");
-					excludeWords.remove("fingers");
-					excludeWords.remove("fit");
-					excludeWords.remove("foot");
-					excludeWords.remove("genetic");
-					excludeWords.remove("glucose");
-					excludeWords.remove("hair");
-					excludeWords.remove("hand");
-					excludeWords.remove("hands");
-					excludeWords.remove("head");
-					excludeWords.remove("healing");
-					excludeWords.remove("hearing");
-					excludeWords.remove("heart");
-					excludeWords.remove("hearts");
-					excludeWords.remove("hydrocodone");
-					excludeWords.remove("ill");
-					excludeWords.remove("infection");
-					excludeWords.remove("infections");
-					excludeWords.remove("injury");
-					// need to review ones after above
-					excludeWords.remove("medication");
-					excludeWords.remove("medications");
-					excludeWords.remove("medicine");
-					excludeWords.remove("medicines");
-					excludeWords.remove("paxil");
-					excludeWords.remove("pill");
-					excludeWords.remove("pills");
-					excludeWords.remove("prozac");
-					excludeWords.remove("tablet");
-					excludeWords.remove("tablets");
-					excludeWords.remove("tramadol");
-					excludeWords.remove("vaccine");
-					excludeWords.remove("valium");
-					excludeWords.remove("zoloft");
-				}
-				
+					
+					File excludeWordsFile = new File(inputDirectory, "ExcludeWords.txt");
+
+					if (excludeWordsFile.exists()) {
+						List<String> words = Files.readAllLines(excludeWordsFile.toPath(), StandardCharsets.UTF_8);
+
+						for (String word : words) {
+							excludeWords.add(word.trim().toLowerCase());
+						}
+					}
+					
+					File includeWordsFile = new File(inputDirectory, "IncludeWords.txt");
+
+					if (includeWordsFile.exists()) {
+						List<String> words = Files.readAllLines(includeWordsFile.toPath(), StandardCharsets.UTF_8);
+
+						for (String word : words) {
+							excludeWords.remove(word.trim().toLowerCase());
+						}
+					}
+
+				}			
 				
 				
 				FilenameFilter filter = new FilenameExtensionFilter("xmi");
@@ -455,6 +395,9 @@ public class CASXMI2Knowtator {
 				AnalysisEngine ae = UIMAFramework.produceAE(desc, resMgr, null);
 				*/
 				
+				File sentencesFile = new File(outputDirectory, "Sentences.txt");
+				PrintStream sps = new PrintStream(sentencesFile);
+				
 				for (int i = 0; i < inputFiles.length; i++) {
 					System.out.println("input file[" + i + "] = " + inputFiles[i].getCanonicalPath());
 					
@@ -470,51 +413,65 @@ public class CASXMI2Knowtator {
  				        
 				        String docText = jCas.getDocumentText();
 				        
+				        Iterator<Sentence> si = JCasUtil.iterator(jCas, Sentence.class);
+				        
+				        while (si.hasNext()) {
+				        	Sentence s = si.next();
+
+				        	sps.print("Sentence[" + s.getSentenceNumber() + "](" + s.getBegin() + ", " + s.getEnd() + "):");
+							sps.println(docText.substring(s.getBegin(), s.getEnd()));
+
+							//System.out.println(s);
+				        }
+				        
 				        Iterator<EventMention> ei = JCasUtil.iterator(jCas, EventMention.class);
 				        
 				        while (ei.hasNext()) {
-				        		EventMention em = ei.next();
-		        		
-						    System.out.println(docText.substring(em.getBegin(), em.getEnd()));
-				        		
-				        		System.out.println(em.toString());
-				        		
-				        		FSArray fsA = em.getOntologyConceptArr();
-				        		for (int j = 0; j < fsA.size(); j++) {
-				        			OntologyConcept ontologyConcept = em.getOntologyConceptArr(j);
-				        			System.out.println(ontologyConcept.toString());
-				        		}
-				        		
-				        		
-				        		if (!excludeWords.contains(em.getCoveredText().trim().toLowerCase())) {
-				        			annotateUMLSConcept(annotations, em);
-				        		}
-				        		else {
-				        			wordsExcluded.add(em.getCoveredText().trim().toLowerCase());
-				        		}
+							EventMention em = ei.next();
+
+							System.out.println(docText.substring(em.getBegin(), em.getEnd()));
+
+							System.out.println(em.toString());
+
+							FSArray fsA = em.getOntologyConceptArr();
+							for (int j = 0; j < fsA.size(); j++) {
+								OntologyConcept ontologyConcept = em.getOntologyConceptArr(j);
+								System.out.println(ontologyConcept.toString());
+							}
+
+							AnnotatedText at = annotateUMLSConcept(annotations, em);
+
+							if (excludeWords.contains(em.getCoveredText().trim().toLowerCase())) {
+								at.setAnnotator(at.getAnnotator() + "_excludedWords");
+								wordsExcluded.add(em.getCoveredText().trim().toLowerCase());
+							}
+							else if (at.getAnnotation().getAnnotationClass().equalsIgnoreCase("MedicationMention")
+									&& at.getAnnotation().containsAttributeValue("TUI", tuiToFilter)) {
+								at.setAnnotator(at.getAnnotator() + "_filteredTUI");
+							}
 				        }
 				        
 				        Iterator<AnatomicalSiteMention> ami = JCasUtil.iterator(jCas, AnatomicalSiteMention.class);
 				        
 				        while (ami.hasNext()) {
-				        		AnatomicalSiteMention am = ami.next();
-		        		
-						    System.out.println(docText.substring(am.getBegin(), am.getEnd()));
-				        		
-				        		System.out.println(am.toString());
-				        		
-				        		FSArray fsA = am.getOntologyConceptArr();
-				        		for (int j = 0; j < fsA.size(); j++) {
-				        			OntologyConcept ontologyConcept = am.getOntologyConceptArr(j);
-				        			System.out.println(ontologyConcept.toString());
-				        		}
-				        		
-				        		if (!excludeWords.contains(am.getCoveredText().trim().toLowerCase())) {
-				        			annotateAnatomicalSiteMention(annotations, am);
-				        		}
-				        		else {
-				        			wordsExcluded.add(am.getCoveredText().trim().toLowerCase());
-				        		}
+							AnatomicalSiteMention am = ami.next();
+
+							System.out.println(docText.substring(am.getBegin(), am.getEnd()));
+
+							System.out.println(am.toString());
+
+							FSArray fsA = am.getOntologyConceptArr();
+							for (int j = 0; j < fsA.size(); j++) {
+								OntologyConcept ontologyConcept = am.getOntologyConceptArr(j);
+								System.out.println(ontologyConcept.toString());
+							}
+
+							AnnotatedText at = annotateAnatomicalSiteMention(annotations, am);
+
+							if (excludeWords.contains(am.getCoveredText().trim().toLowerCase())) {
+								at.setAnnotator(at.getAnnotator() + "_excludedWords");
+								wordsExcluded.add(am.getCoveredText().trim().toLowerCase());
+							}
 				        }
 				        
 				        /*
@@ -583,7 +540,8 @@ public class CASXMI2Knowtator {
 	        catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (ResourceInitializationException e1) {
+			}
+	        catch (ResourceInitializationException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}

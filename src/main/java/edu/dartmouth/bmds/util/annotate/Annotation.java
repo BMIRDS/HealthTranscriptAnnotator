@@ -87,6 +87,19 @@ public class Annotation {
 		xsw.writeEndElement();
 
 	}
+
+	public boolean containsAttributeValue(String attributeName, String[] valuesToFilter) {
+		
+		Collection<String> values = attributes.get(attributeName);
+			
+		for (int i = 0; i < valuesToFilter.length; i++) {
+			if (values.contains(valuesToFilter[i])) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
 	
 	//private String newId() {
 	//	return "CASXMI2Knowtator_Instance_" + idValue++;
