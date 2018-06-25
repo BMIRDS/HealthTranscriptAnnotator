@@ -12,7 +12,7 @@ public class AnnotatedText {
 	private long spanEnd;
 	private String spannedText;
 	private String annotatorId = "cTAKES_4.0.0";
-	private String annotator = "cTAKES";
+	private String annotator = "ORALS";
 	private Date creationDate = new Date();
 	
 	private Annotation annotation = null;

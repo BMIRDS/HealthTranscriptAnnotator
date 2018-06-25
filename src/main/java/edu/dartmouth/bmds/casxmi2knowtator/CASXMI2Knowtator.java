@@ -28,8 +28,12 @@ import org.apache.ctakes.typesystem.type.refsem.OntologyConcept;
 import org.apache.ctakes.typesystem.type.refsem.UmlsConcept;
 import org.apache.ctakes.typesystem.type.structured.DocumentPath;
 import org.apache.ctakes.typesystem.type.textsem.AnatomicalSiteMention;
+import org.apache.ctakes.typesystem.type.textsem.DiseaseDisorderMention;
 import org.apache.ctakes.typesystem.type.textsem.EventMention;
+import org.apache.ctakes.typesystem.type.textsem.IdentifiedAnnotation;
 import org.apache.ctakes.typesystem.type.textsem.MedicationMention;
+import org.apache.ctakes.typesystem.type.textsem.ProcedureMention;
+import org.apache.ctakes.typesystem.type.textsem.SignSymptomMention;
 import org.apache.ctakes.typesystem.type.textspan.Sentence;
 import org.apache.uima.UIMAException;
 import org.apache.uima.UIMAFramework;
@@ -58,7 +62,7 @@ public class CASXMI2Knowtator {
 	
 	// "T116", "T125", "T131"?
 	// "T129", "T195" May 7,2018
-	protected static String[] tuiToFilter = {"T122", "T123", "T197"};
+	protected static String[] tuiToFilterForMedications = {"T122", "T123", "T197"};
 	
 	public static void addAnnotationsToSummary(Iterable<AnnotatedText> annotatedTexts) {
 		Iterator<AnnotatedText> annotatedTextIterator = annotatedTexts.iterator();
@@ -130,13 +134,11 @@ public class CASXMI2Knowtator {
 		}
 	}
 	
-	public static AnnotatedText annotateUMLSConcept(Set<AnnotatedText> annotations, EventMention em) {
+	public static AnnotatedText annotateUMLSConcept(Set<AnnotatedText> annotations, IdentifiedAnnotation em) {
 		
 		//AnnotatedText at = new AnnotatedText(em.getBegin(), em.getEnd(), em.getCAS().getDocumentText().substring(em.getBegin(), em.getEnd()));
 		AnnotatedText at = new AnnotatedText(em.getBegin(), em.getEnd(), em.getCoveredText());
-		
-		annotations.add(at);
-		
+				
 		HashMap<String, Annotation> annotationMap = new HashMap<String, Annotation>();
 		
 		FSArray fsA = em.getOntologyConceptArr();
@@ -167,13 +169,11 @@ public class CASXMI2Knowtator {
 		
 		return at;
 	}
-	
+/*	
 	public static AnnotatedText annotateAnatomicalSiteMention(Set<AnnotatedText> annotations, AnatomicalSiteMention am) {
 		
 		AnnotatedText at = new AnnotatedText(am.getBegin(), am.getEnd(), am.getCAS().getDocumentText().substring(am.getBegin(), am.getEnd()));
-		
-		annotations.add(at);
-		
+				
 		HashMap<String, Annotation> annotationMap = new HashMap<String, Annotation>();
 		
 		FSArray fsA = am.getOntologyConceptArr();
@@ -203,7 +203,7 @@ public class CASXMI2Knowtator {
 		
 		return at;
 	}
-	
+*/	
 	
 /*	
 	public static AnnotatedText annotateMedicationMention(Set<AnnotatedText> annotations, MedicationMention mm) {
@@ -281,6 +281,7 @@ public class CASXMI2Knowtator {
 		Options options = new Options();
 		options.addOption("h", "help", false, "Print this message");
 		options.addOption("e", "exclude", false, "Exclude words in ExcludeWords.txt");
+		options.addRequiredOption("c", "configDirectory", true, "Directory containing configuration files, including words to include/exclude");
 		options.addRequiredOption("i", "inputDirectory", true, "Directory containing the CAS XPI files to be converted");
 		options.addRequiredOption("o", "outputDirectory", true, "Directory where converted CAS XPI files will be stored in the Knowtator format");
 		
@@ -293,10 +294,14 @@ public class CASXMI2Knowtator {
 	        		helpFormatter.printHelp( "casxmi2knowtator", options );
 	        }
 	        
+	        File configDirectory = null;
 	        File inputDirectory = null;
 	        File outputDirectory = null;
 	        
 	        try {
+	        	configDirectory = new File(line.getOptionValue("c"));
+	        	System.out.println("config directory = " + configDirectory.getCanonicalPath());
+	        	
 	        	inputDirectory = new File(line.getOptionValue("i"));
 				System.out.println("input directory = " + inputDirectory.getCanonicalPath());
 			
@@ -307,40 +312,86 @@ public class CASXMI2Knowtator {
 					outputDirectory.mkdirs();
 				}
 				
-				System.out.println("trying new stuff");
-
-				TreeSet<String> excludeWords = new TreeSet<String>();
-				TreeSet<String> wordsExcluded = new TreeSet<String>();
+				TreeSet<String> medicationExcludeWords = new TreeSet<String>();
+				TreeSet<String> medicationWordsExcluded = new TreeSet<String>();
+				
+				TreeSet<String> sspExcludeWords = new TreeSet<String>();
+				TreeSet<String> sspWordsExcluded = new TreeSet<String>();
+				
+				TreeSet<String> diagnosisExcludeWords = new TreeSet<String>();
+				TreeSet<String> diagnosisWordsExcluded = new TreeSet<String>();
 								
 				if (line.hasOption("e")) {
 
-					File commonWordsFile = new File(inputDirectory, "CommonWords.txt");
+					File commonWordsFile = new File(configDirectory, "CommonWords.txt");
 
 					if (commonWordsFile.exists()) {
 						List<String> words = Files.readAllLines(commonWordsFile.toPath(), StandardCharsets.UTF_8);
 
 						for (String word : words) {
-							excludeWords.add(word.trim().toLowerCase());
+							medicationExcludeWords.add(word.trim().toLowerCase());
+							sspExcludeWords.add(word.trim().toLowerCase());
+							diagnosisExcludeWords.add(word.trim().toLowerCase());
 						}
 					}
 					
-					File excludeWordsFile = new File(inputDirectory, "ExcludeWords.txt");
+					File medicationExcludeWordsFile = new File(configDirectory, "MedicationExcludeWords.txt");
 
-					if (excludeWordsFile.exists()) {
-						List<String> words = Files.readAllLines(excludeWordsFile.toPath(), StandardCharsets.UTF_8);
+					if (medicationExcludeWordsFile.exists()) {
+						List<String> words = Files.readAllLines(medicationExcludeWordsFile.toPath(), StandardCharsets.UTF_8);
 
 						for (String word : words) {
-							excludeWords.add(word.trim().toLowerCase());
+							medicationExcludeWords.add(word.trim().toLowerCase());
 						}
 					}
 					
-					File includeWordsFile = new File(inputDirectory, "IncludeWords.txt");
+					File medicationIncludeWordsFile = new File(configDirectory, "MedicationIncludeWords.txt");
 
-					if (includeWordsFile.exists()) {
-						List<String> words = Files.readAllLines(includeWordsFile.toPath(), StandardCharsets.UTF_8);
+					if (medicationIncludeWordsFile.exists()) {
+						List<String> words = Files.readAllLines(medicationIncludeWordsFile.toPath(), StandardCharsets.UTF_8);
 
 						for (String word : words) {
-							excludeWords.remove(word.trim().toLowerCase());
+							medicationExcludeWords.remove(word.trim().toLowerCase());
+						}
+					}
+					
+					File sspExcludeWordsFile = new File(configDirectory, "SignsSymptomsExcludeWords.txt");
+
+					if (sspExcludeWordsFile.exists()) {
+						List<String> words = Files.readAllLines(sspExcludeWordsFile.toPath(), StandardCharsets.UTF_8);
+
+						for (String word : words) {
+							sspExcludeWords.add(word.trim().toLowerCase());
+						}
+					}
+					
+					File sspIncludeWordsFile = new File(configDirectory, "SignsSymptomsIncludeWords.txt");
+
+					if (sspIncludeWordsFile.exists()) {
+						List<String> words = Files.readAllLines(sspIncludeWordsFile.toPath(), StandardCharsets.UTF_8);
+
+						for (String word : words) {
+							sspExcludeWords.remove(word.trim().toLowerCase());
+						}
+					}
+					
+					File diagnosisExcludeWordsFile = new File(configDirectory, "DiagnosisSymptomsExcludeWords.txt");
+
+					if (diagnosisExcludeWordsFile.exists()) {
+						List<String> words = Files.readAllLines(diagnosisExcludeWordsFile.toPath(), StandardCharsets.UTF_8);
+
+						for (String word : words) {
+							diagnosisExcludeWords.add(word.trim().toLowerCase());
+						}
+					}
+					
+					File diagnosisIncludeWordsFile = new File(configDirectory, "DiagnosisIncludeWords.txt");
+
+					if (sspIncludeWordsFile.exists()) {
+						List<String> words = Files.readAllLines(diagnosisIncludeWordsFile.toPath(), StandardCharsets.UTF_8);
+
+						for (String word : words) {
+							diagnosisExcludeWords.remove(word.trim().toLowerCase());
 						}
 					}
 
@@ -426,6 +477,8 @@ public class CASXMI2Knowtator {
 				        
 				        Iterator<EventMention> ei = JCasUtil.iterator(jCas, EventMention.class);
 				        
+				        AnnotatedText at;
+				        
 				        while (ei.hasNext()) {
 							EventMention em = ei.next();
 
@@ -439,18 +492,59 @@ public class CASXMI2Knowtator {
 								System.out.println(ontologyConcept.toString());
 							}
 
-							AnnotatedText at = annotateUMLSConcept(annotations, em);
-
-							if (excludeWords.contains(em.getCoveredText().trim().toLowerCase())) {
-								at.setAnnotator(at.getAnnotator() + "_excludedWords");
-								wordsExcluded.add(em.getCoveredText().trim().toLowerCase());
+							at = null;
+															
+							if (em instanceof MedicationMention) {
+								
+								at = annotateUMLSConcept(annotations, em);
+								
+								if (medicationExcludeWords.contains(em.getCoveredText().trim().toLowerCase())) {
+									at.setAnnotator(at.getAnnotator() + "_medicationExcludedWords");
+									medicationWordsExcluded.add(em.getCoveredText().trim().toLowerCase());
+								}
+								else if (at.getAnnotation().containsAttributeValue("TUI", tuiToFilterForMedications)) {
+									at.setAnnotator(at.getAnnotator() + "_medicationFilteredTUI");
+								}
+								else {
+									at.getAnnotation().setAnnotationClass("Discussion_of_Medications");
+									annotations.add(at);
+								}
 							}
-							else if (at.getAnnotation().getAnnotationClass().equalsIgnoreCase("MedicationMention")
-									&& at.getAnnotation().containsAttributeValue("TUI", tuiToFilter)) {
-								at.setAnnotator(at.getAnnotator() + "_filteredTUI");
-							}
+							else if (em instanceof DiseaseDisorderMention) {
+								at = annotateUMLSConcept(annotations, em);
+								
+								if (diagnosisExcludeWords.contains(em.getCoveredText().trim().toLowerCase())) {
+									at.setAnnotator(at.getAnnotator() + "_diagnosisExcludedWords");
+									diagnosisWordsExcluded.add(em.getCoveredText().trim().toLowerCase());
+								}
+								else {
+									at.getAnnotation().setAnnotationClass("Diagnosis");
+									at.setAnnotator(at.getAnnotator() + "_unimplemented");
+									annotations.add(at);
+								}
+				        	}
+							else if (em instanceof SignSymptomMention) {
+								at = annotateUMLSConcept(annotations, em);
+								
+								if (sspExcludeWords.contains(em.getCoveredText().trim().toLowerCase())) {
+									at.setAnnotator(at.getAnnotator() + "_sspExcludedWords");
+									sspWordsExcluded.add(em.getCoveredText().trim().toLowerCase());
+								}
+								else {
+									at.getAnnotation().setAnnotationClass("Signs_Symptoms_and_Problems");
+									at.setAnnotator(at.getAnnotator() + "_unimplemented");
+									annotations.add(at);
+								}
+				        	}
+							else if (em instanceof ProcedureMention) {
+								//at.setAnnotator(at.getAnnotator() + "_unimplemented");
+								//annotations.add(at);
+				        	}							
+							
+				        	
 				        }
 				        
+				        // Handle AnatomicalSiteMention
 				        Iterator<AnatomicalSiteMention> ami = JCasUtil.iterator(jCas, AnatomicalSiteMention.class);
 				        
 				        while (ami.hasNext()) {
@@ -466,12 +560,11 @@ public class CASXMI2Knowtator {
 								System.out.println(ontologyConcept.toString());
 							}
 
-							AnnotatedText at = annotateAnatomicalSiteMention(annotations, am);
+							//at = annotateAnatomicalSiteMention(annotations, am);
+							at = annotateUMLSConcept(annotations, am);
 
-							if (excludeWords.contains(am.getCoveredText().trim().toLowerCase())) {
-								at.setAnnotator(at.getAnnotator() + "_excludedWords");
-								wordsExcluded.add(am.getCoveredText().trim().toLowerCase());
-							}
+							at.setAnnotator(at.getAnnotator() + "_unimplemented");
+							//annotations.add(at);
 				        }
 				        
 				        /*
@@ -506,11 +599,12 @@ public class CASXMI2Knowtator {
 				        XMLStreamWriter xsw = xof.createXMLStreamWriter(fw);
 				        
 				        KnowtatorUtil.writeAnnotatedTexts(xsw, annotations, docFileName);
+				        				        
 				        
 				        xsw.flush();
 						fw.flush();
-						xsw.close();
-						fw.close();
+						//xsw.close();
+						//fw.close();
 						
 						addAnnotationsToSummary(annotations);
 				        
@@ -534,8 +628,13 @@ public class CASXMI2Knowtator {
 					//cc.
 				}
 				
+		        sps.flush();
+		        sps.close();
+				
 				writeTermSummary(outputDirectory);
-				writeSet(new File(outputDirectory, "WordsExcluded.txt"), wordsExcluded);
+				writeSet(new File(outputDirectory, "DiagnosisWordsExcluded.txt"), diagnosisWordsExcluded);
+				writeSet(new File(outputDirectory, "MedicationWordsExcluded.txt"), medicationWordsExcluded);
+				writeSet(new File(outputDirectory, "SignsSymptomsWordsExcluded.txt"), sspWordsExcluded);
 	        }
 	        catch (IOException e) {
 				// TODO Auto-generated catch block

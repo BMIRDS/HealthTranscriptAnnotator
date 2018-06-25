@@ -27,6 +27,11 @@ public class Annotation {
 	public String getAnnotationClass() {
 		return annotatonClassName;
 	}
+	
+	public void setAnnotationClass(String className) {
+		annotatonClassName = className;
+		
+	}
  	
 	public boolean addAttribute(String name, String value) {
 		
