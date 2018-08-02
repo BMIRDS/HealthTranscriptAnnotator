@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
@@ -63,6 +64,8 @@ public class CASXMI2Knowtator {
 	// "T116", "T125", "T131"?
 	// "T129", "T195" May 7,2018
 	protected static String[] tuiToFilterForMedications = {"T122", "T123", "T197"};
+	protected static String[] tuiToFilterForDiagnoses = {};
+	protected static String[] tuiToFilterForSignsSymptoms = {};
 	
 	public static void addAnnotationsToSummary(Iterable<AnnotatedText> annotatedTexts) {
 		Iterator<AnnotatedText> annotatedTextIterator = annotatedTexts.iterator();
@@ -454,6 +457,8 @@ public class CASXMI2Knowtator {
 					
 					FileInputStream fis = new FileInputStream(inputFiles[i]);
 					
+					Map<String, Sentence> sentencesMap = new HashMap<String, Sentence>();
+					
 					JCas jCas;
 					try {
 						jCas = JCasFactory.createJCas(tsd);
@@ -472,6 +477,7 @@ public class CASXMI2Knowtator {
 				        	sps.print("Sentence[" + s.getSentenceNumber() + "](" + s.getBegin() + ", " + s.getEnd() + "):");
 							sps.println(docText.substring(s.getBegin(), s.getEnd()));
 
+							sentencesMap.put(s.getSegmentId(), s);
 							//System.out.println(s);
 				        }
 				        
@@ -493,6 +499,8 @@ public class CASXMI2Knowtator {
 							}
 
 							at = null;
+							
+							Sentence s = sentencesMap.get(em.getSentenceID());
 															
 							if (em instanceof MedicationMention) {
 								
@@ -517,6 +525,12 @@ public class CASXMI2Knowtator {
 									at.setAnnotator(at.getAnnotator() + "_diagnosisExcludedWords");
 									diagnosisWordsExcluded.add(em.getCoveredText().trim().toLowerCase());
 								}
+								else if (at.getAnnotation().containsAttributeValue("TUI", tuiToFilterForDiagnoses)) {
+									at.setAnnotator(at.getAnnotator() + "_diagnosisFilteredTUI");
+								}
+								else if (s.getCoveredText().contains("I ") || s.getCoveredText().contains("you ")) {
+									
+								}
 								else {
 									at.getAnnotation().setAnnotationClass("Diagnosis");
 									at.setAnnotator(at.getAnnotator() + "_unimplemented");
@@ -529,6 +543,9 @@ public class CASXMI2Knowtator {
 								if (sspExcludeWords.contains(em.getCoveredText().trim().toLowerCase())) {
 									at.setAnnotator(at.getAnnotator() + "_sspExcludedWords");
 									sspWordsExcluded.add(em.getCoveredText().trim().toLowerCase());
+								}
+								else if (at.getAnnotation().containsAttributeValue("TUI", tuiToFilterForSignsSymptoms)) {
+									at.setAnnotator(at.getAnnotator() + "_sspFilteredTUI");
 								}
 								else {
 									at.getAnnotation().setAnnotationClass("Signs_Symptoms_and_Problems");
