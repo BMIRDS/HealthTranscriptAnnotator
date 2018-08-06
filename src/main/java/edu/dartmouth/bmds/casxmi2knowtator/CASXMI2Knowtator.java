@@ -58,14 +58,21 @@ import org.apache.uima.util.XMLInputSource;
 import org.xml.sax.SAXException;
 
 public class CASXMI2Knowtator {
+	
+	private static boolean debugMode = false;
 
 	private static HashMap<String, SortedMap<String, Integer>> termSummaryMap = new HashMap<String, SortedMap<String, Integer>>();
+	
+	private static Map<IdentifiedAnnotation, Set<IdentifiedAnnotation>> overlappingAnnotationsMap = new HashMap<IdentifiedAnnotation, Set<IdentifiedAnnotation>>();
 	
 	// "T116", "T125", "T131"?
 	// "T129", "T195" May 7,2018
 	protected static String[] tuiToFilterForMedications = {"T122", "T123", "T197"};
 	protected static String[] tuiToFilterForDiagnoses = {};
 	protected static String[] tuiToFilterForSignsSymptoms = {};
+	
+	protected static String[] tuiToFilterForMeciationsOverlappingDiagnoses = { "T129" };
+	protected static String[] tuiToFilterForMeciationsOverlappingProcedures = { "T109", "T116", "T125"};
 	
 	public static void addAnnotationsToSummary(Iterable<AnnotatedText> annotatedTexts) {
 		Iterator<AnnotatedText> annotatedTextIterator = annotatedTexts.iterator();
@@ -283,6 +290,7 @@ public class CASXMI2Knowtator {
 		// create the Options
 		Options options = new Options();
 		options.addOption("h", "help", false, "Print this message");
+		options.addOption("d", "debug", false, "Include as much as possible from filtered output");
 		options.addOption("e", "exclude", false, "Exclude words in ExcludeWords.txt");
 		options.addRequiredOption("c", "configDirectory", true, "Directory containing configuration files, including words to include/exclude");
 		options.addRequiredOption("i", "inputDirectory", true, "Directory containing the CAS XPI files to be converted");
@@ -295,6 +303,10 @@ public class CASXMI2Knowtator {
 	        if (line.hasOption("h")) {
 	        		HelpFormatter helpFormatter = new HelpFormatter();
 	        		helpFormatter.printHelp( "casxmi2knowtator", options );
+	        }
+	        
+	        if (line.hasOption("d")) { 
+	        	debugMode = true;
 	        }
 	        
 	        File configDirectory = null;
@@ -469,6 +481,32 @@ public class CASXMI2Knowtator {
  				        
 				        String docText = jCas.getDocumentText();
 				        
+				        Iterator<IdentifiedAnnotation> iai = JCasUtil.iterator(jCas, IdentifiedAnnotation.class);
+				        				        
+				        while (iai.hasNext()) {
+				        	IdentifiedAnnotation ia = iai.next();
+							
+							Set<IdentifiedAnnotation> overlappingAnnotations = overlappingAnnotationsMap.get(ia);
+							
+							Iterator<IdentifiedAnnotation> iaj = JCasUtil.iterator(jCas, IdentifiedAnnotation.class);
+					        	
+							while (iaj.hasNext()) {
+								IdentifiedAnnotation ia2 = iaj.next();
+								
+								if (ia != ia2) {
+									
+									if ((ia.getBegin() >= ia2.getBegin()) && (ia.getEnd() <= ia2.getEnd())
+											|| (ia2.getBegin() >= ia.getBegin()) && (ia2.getEnd() <= ia.getEnd())) {
+										if (overlappingAnnotations == null) {
+											overlappingAnnotations = new HashSet<IdentifiedAnnotation>();
+											overlappingAnnotationsMap.put(ia, overlappingAnnotations);
+										}
+										overlappingAnnotations.add(ia2);
+								  	}
+								}
+							}
+				        }
+				        
 				        Iterator<Sentence> si = JCasUtil.iterator(jCas, Sentence.class);
 				        
 				        while (si.hasNext()) {
@@ -509,13 +547,48 @@ public class CASXMI2Knowtator {
 								if (medicationExcludeWords.contains(em.getCoveredText().trim().toLowerCase())) {
 									at.setAnnotator(at.getAnnotator() + "_medicationExcludedWords");
 									medicationWordsExcluded.add(em.getCoveredText().trim().toLowerCase());
+									if (debugMode) {
+										annotations.add(at);
+									}
 								}
 								else if (at.getAnnotation().containsAttributeValue("TUI", tuiToFilterForMedications)) {
 									at.setAnnotator(at.getAnnotator() + "_medicationFilteredTUI");
+									if (debugMode) {
+										annotations.add(at);
+									}
 								}
 								else {
-									at.getAnnotation().setAnnotationClass("Discussion_of_Medications");
-									annotations.add(at);
+									Set<IdentifiedAnnotation> overlappingAnnotations = overlappingAnnotationsMap.get(em);
+									if (overlappingAnnotations != null) {
+										Iterator<IdentifiedAnnotation> oai = overlappingAnnotations.iterator();
+										boolean overlapFound = false;
+										
+										while (oai.hasNext()) {
+											IdentifiedAnnotation oa = oai.next();
+											if ((oa instanceof DiseaseDisorderMention) && at.getAnnotation().containsAttributeValue("TUI", tuiToFilterForMeciationsOverlappingDiagnoses)) {
+												at.setAnnotator(at.getAnnotator() + "_medicationFilteredDiagnosisTUI");
+												overlapFound = true;
+											}
+											if ((oa instanceof ProcedureMention) && at.getAnnotation().containsAttributeValue("TUI", tuiToFilterForMeciationsOverlappingProcedures)) {
+												at.setAnnotator(at.getAnnotator() + "_medicationFilteredProcedureTUI");
+												overlapFound = true;
+											}
+										}
+										
+										if (overlapFound) {
+											if (debugMode) {
+												annotations.add(at);
+											}
+										}
+										else {
+											at.getAnnotation().setAnnotationClass("Discussion_of_Medications");
+										    annotations.add(at);
+										}
+									}
+									else {
+									    at.getAnnotation().setAnnotationClass("Discussion_of_Medications");
+									    annotations.add(at);
+									}
 								}
 							}
 							else if (em instanceof DiseaseDisorderMention) {
@@ -524,12 +597,15 @@ public class CASXMI2Knowtator {
 								if (diagnosisExcludeWords.contains(em.getCoveredText().trim().toLowerCase())) {
 									at.setAnnotator(at.getAnnotator() + "_diagnosisExcludedWords");
 									diagnosisWordsExcluded.add(em.getCoveredText().trim().toLowerCase());
+									if (debugMode) {
+										annotations.add(at);
+									}
 								}
 								else if (at.getAnnotation().containsAttributeValue("TUI", tuiToFilterForDiagnoses)) {
 									at.setAnnotator(at.getAnnotator() + "_diagnosisFilteredTUI");
-								}
-								else if (s.getCoveredText().contains("I ") || s.getCoveredText().contains("you ")) {
-									
+									if (debugMode) {
+										annotations.add(at);
+									}
 								}
 								else {
 									at.getAnnotation().setAnnotationClass("Diagnosis");
@@ -543,9 +619,15 @@ public class CASXMI2Knowtator {
 								if (sspExcludeWords.contains(em.getCoveredText().trim().toLowerCase())) {
 									at.setAnnotator(at.getAnnotator() + "_sspExcludedWords");
 									sspWordsExcluded.add(em.getCoveredText().trim().toLowerCase());
+									if (debugMode) {
+										annotations.add(at);
+									}
 								}
 								else if (at.getAnnotation().containsAttributeValue("TUI", tuiToFilterForSignsSymptoms)) {
 									at.setAnnotator(at.getAnnotator() + "_sspFilteredTUI");
+									if (debugMode) {
+										annotations.add(at);
+									}
 								}
 								else {
 									at.getAnnotation().setAnnotationClass("Signs_Symptoms_and_Problems");
@@ -554,8 +636,12 @@ public class CASXMI2Knowtator {
 								}
 				        	}
 							else if (em instanceof ProcedureMention) {
-								//at.setAnnotator(at.getAnnotator() + "_unimplemented");
-								//annotations.add(at);
+								at = annotateUMLSConcept(annotations, em);
+								
+								at.setAnnotator(at.getAnnotator() + "_unimplemented");
+								if (debugMode) {
+									annotations.add(at);
+								}
 				        	}							
 							
 				        	
