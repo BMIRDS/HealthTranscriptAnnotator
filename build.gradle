@@ -23,6 +23,10 @@ repositories {
 dependencies {
     compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
     compile group: 'org.apache.commons', name: 'commons-collections4', version: '4.1'
+    compile group: 'de.tudarmstadt.ukp.dkpro.statistics', name: 'de.tudarmstadt.ukp.dkpro.statistics', version: '1.0.2'
     compile group: 'org.apache.ctakes', name: 'ctakes-type-system', version: '4.0.0'
+	compile group: 'org.apache.ctakes', name: 'ctakes-core', version: '4.0.0'
+	compile group: 'de.tudarmstadt.ukp.dkpro.core', name: 'de.tudarmstadt.ukp.dkpro.core.api.syntax-asl', version: '1.10.0'
+    compile group: 'de.tudarmstadt.ukp.dkpro.core', name: 'de.tudarmstadt.ukp.dkpro.core-asl', version: '1.10.0'
     compile group: 'org.apache.uima', name: 'uimaj-core', version: '2.10.2'
 }
