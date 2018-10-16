@@ -74,6 +74,8 @@ public class CASXMI2Knowtator {
 	protected static String[] tuiToFilterForMeciationsOverlappingDiagnoses = { "T129" };
 	protected static String[] tuiToFilterForMeciationsOverlappingProcedures = { "T109", "T116", "T125"};
 	
+	protected static String[] substringToFilterForAllergens = { "allergenic" };
+	
 	public static void addAnnotationsToSummary(Iterable<AnnotatedText> annotatedTexts) {
 		Iterator<AnnotatedText> annotatedTextIterator = annotatedTexts.iterator();
 			
@@ -544,15 +546,32 @@ public class CASXMI2Knowtator {
 								
 								at = annotateUMLSConcept(annotations, em);
 								
-								if (medicationExcludeWords.contains(em.getCoveredText().trim().toLowerCase())) {
-									at.setAnnotator(at.getAnnotator() + "_medicationExcludedWords");
+								if (em.getCoveredText().trim().toLowerCase().endsWith(" mg")) {
+									at.setAnnotator(at.getAnnotator() + "_medicationExcludedDoseageMG");
 									medicationWordsExcluded.add(em.getCoveredText().trim().toLowerCase());
 									if (debugMode) {
 										annotations.add(at);
 									}
 								}
+								if (medicationExcludeWords.contains(em.getCoveredText().trim().toLowerCase())) {
+									if (!(em.getCoveredText().trim().toLowerCase().endsWith(" medication")
+											|| em.getCoveredText().trim().toLowerCase().endsWith(" medicine")
+											|| em.getCoveredText().trim().toLowerCase().endsWith(" pill"))) {
+										at.setAnnotator(at.getAnnotator() + "_medicationExcludedWords");
+										medicationWordsExcluded.add(em.getCoveredText().trim().toLowerCase());
+										if (debugMode) {
+											annotations.add(at);
+										}
+									}
+								}
 								else if (at.getAnnotation().containsAttributeValue("TUI", tuiToFilterForMedications)) {
 									at.setAnnotator(at.getAnnotator() + "_medicationFilteredTUI");
+									if (debugMode) {
+										annotations.add(at);
+									}
+								}
+								else if (at.getAnnotation().containsAttributeValueSubstring("preferredText", substringToFilterForAllergens)) {
+									at.setAnnotator(at.getAnnotator() + "_medicationFilteredAllergenic");
 									if (debugMode) {
 										annotations.add(at);
 									}
@@ -566,12 +585,18 @@ public class CASXMI2Knowtator {
 										while (oai.hasNext()) {
 											IdentifiedAnnotation oa = oai.next();
 											if ((oa instanceof DiseaseDisorderMention) && at.getAnnotation().containsAttributeValue("TUI", tuiToFilterForMeciationsOverlappingDiagnoses)) {
-												at.setAnnotator(at.getAnnotator() + "_medicationFilteredDiagnosisTUI");
-												overlapFound = true;
+												if (!(em.getCoveredText().trim().toLowerCase().endsWith(" shot") || em.getCoveredText().trim().toLowerCase().endsWith(" vaccine"))) {
+													at.setAnnotator(at.getAnnotator() + "_medicationFilteredDiagnosisTUI");
+													overlapFound = true;
+												}
 											}
 											if ((oa instanceof ProcedureMention) && at.getAnnotation().containsAttributeValue("TUI", tuiToFilterForMeciationsOverlappingProcedures)) {
-												at.setAnnotator(at.getAnnotator() + "_medicationFilteredProcedureTUI");
-												overlapFound = true;
+												if (!(em.getCoveredText().trim().toLowerCase().endsWith(" medication")
+														|| em.getCoveredText().trim().toLowerCase().endsWith(" medicine")
+														|| em.getCoveredText().trim().toLowerCase().endsWith(" pill"))) {
+													at.setAnnotator(at.getAnnotator() + "_medicationFilteredProcedureTUI");
+													overlapFound = true;
+												}
 											}
 										}
 										

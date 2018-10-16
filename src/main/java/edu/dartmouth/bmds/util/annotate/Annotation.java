@@ -105,6 +105,23 @@ public class Annotation {
 		
 		return false;
 	}
+
+	public boolean containsAttributeValueSubstring(String attributeName, String[] valuesToFilter) {
+		
+		Collection<String> values = attributes.get(attributeName);
+		
+		for (int i = 0; i < valuesToFilter.length; i++) {
+			Iterator<String> j = values.iterator();
+			
+			while (j.hasNext()) {
+				if (j.next().contains(valuesToFilter[i])) {
+					return true;
+				}
+			}
+		}
+		
+		return false;
+	}
 	
 	//private String newId() {
 	//	return "CASXMI2Knowtator_Instance_" + idValue++;
