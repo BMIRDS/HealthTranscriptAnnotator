@@ -1,6 +1,8 @@
 ambien
 cialis
 fioricet
+herb
+herbs
 hydrocodone
 insulin
 levitra
@@ -9,9 +11,13 @@ paxil
 phentermine
 propecia
 prozac
+supplement
+supplements
 tramadol
 ultram
 valium
 viagra
+vitamin
+vitamins
 xanax
 zoloft

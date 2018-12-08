@@ -67,12 +67,13 @@ public class CASXMI2Knowtator {
 	
 	// "T116", "T125", "T131"?
 	// "T129", "T195" May 7,2018
-	protected static String[] tuiToFilterForMedications = {"T122", "T123", "T197"};
+	// "T125" Hormone, what to do with it related to medications???
+	protected static String[] tuiToFilterForMedications = {"T114", "T122", "T123", "T125", "T130", "T197"};
 	protected static String[] tuiToFilterForDiagnoses = {};
 	protected static String[] tuiToFilterForSignsSymptoms = {};
 	
 	protected static String[] tuiToFilterForMeciationsOverlappingDiagnoses = { "T129" };
-	protected static String[] tuiToFilterForMeciationsOverlappingProcedures = { "T109", "T116", "T125"};
+	protected static String[] tuiToFilterForMeciationsOverlappingProcedures = { "T109", "T116"};
 	
 	protected static String[] substringToFilterForAllergens = { "allergenic" };
 	
@@ -278,6 +279,24 @@ public class CASXMI2Knowtator {
 			}	
 		
 	}
+	
+	public static Sentence sentenceForSpan(Iterator<Sentence> sentences, int spanStart, int spanEnd) {
+		
+		Sentence foundSentence = null;
+		
+		while (sentences.hasNext() && (foundSentence == null)) {
+        	Sentence s = sentences.next();
+
+        	System.out.print("Sentence[" + s.getSentenceNumber() + "](" + s.getBegin() + ", " + s.getEnd() + "):");        	
+        	
+        	if ((spanStart >= s.getBegin()) && (spanEnd <= s.getEnd())) {
+        		foundSentence = s;
+        	}
+		}
+			
+		
+		return foundSentence;
+	}
 
 	
 	public static void main(String[] args) {
@@ -337,6 +356,8 @@ public class CASXMI2Knowtator {
 				
 				TreeSet<String> diagnosisExcludeWords = new TreeSet<String>();
 				TreeSet<String> diagnosisWordsExcluded = new TreeSet<String>();
+				
+				TreeSet<String> vitaminSupplementIncludeWords = new TreeSet<String>();
 								
 				if (line.hasOption("e")) {
 
@@ -412,8 +433,21 @@ public class CASXMI2Knowtator {
 						}
 					}
 
-				}			
+				}
 				
+				File vitaminSupplementIncludeWordsFile = new File(configDirectory, "VitaminSupplementWords.txt");
+				
+				if (vitaminSupplementIncludeWordsFile.exists()) {
+					List<String> words = Files.readAllLines(vitaminSupplementIncludeWordsFile.toPath(), StandardCharsets.UTF_8);
+
+					for (String word : words) {
+						
+						String tword = word.trim().toLowerCase();
+						if (!tword.isEmpty()) {
+							vitaminSupplementIncludeWords.add(tword);
+						}
+					}
+				}
 				
 				FilenameFilter filter = new FilenameExtensionFilter("xmi");
 				
@@ -471,7 +505,7 @@ public class CASXMI2Knowtator {
 					
 					FileInputStream fis = new FileInputStream(inputFiles[i]);
 					
-					Map<String, Sentence> sentencesMap = new HashMap<String, Sentence>();
+					Map<Integer, Sentence> sentencesMap = new HashMap<Integer, Sentence>();
 					
 					JCas jCas;
 					try {
@@ -516,8 +550,17 @@ public class CASXMI2Knowtator {
 
 				        	sps.print("Sentence[" + s.getSentenceNumber() + "](" + s.getBegin() + ", " + s.getEnd() + "):");
 							sps.println(docText.substring(s.getBegin(), s.getEnd()));
+							
+							Iterator<String> vwi = vitaminSupplementIncludeWords.iterator();
+							while (vwi.hasNext()) {
+								
+								String vhs = vwi.next();
+								if (s.getCoveredText().toLowerCase().trim().contains(vhs.toLowerCase().trim())) {
+									sps.print("Sentence[" + s.getSentenceNumber() + "] contains: " +vhs);
+								}
+							}
 
-							sentencesMap.put(s.getSegmentId(), s);
+							sentencesMap.put(s.getSentenceNumber(), s);
 							//System.out.println(s);
 				        }
 				        
@@ -540,7 +583,17 @@ public class CASXMI2Knowtator {
 
 							at = null;
 							
-							Sentence s = sentencesMap.get(em.getSentenceID());
+							Sentence s = null;
+							String sText = null;
+							
+							try {
+								s = sentencesMap.get(Integer.parseInt(em.getSentenceID()));
+								sText = s.getCoveredText();
+							}
+							catch (NumberFormatException e) {
+								s = null;
+							}
+							
 															
 							if (em instanceof MedicationMention) {
 								
@@ -556,7 +609,9 @@ public class CASXMI2Knowtator {
 								if (medicationExcludeWords.contains(em.getCoveredText().trim().toLowerCase())) {
 									if (!(em.getCoveredText().trim().toLowerCase().endsWith(" medication")
 											|| em.getCoveredText().trim().toLowerCase().endsWith(" medicine")
-											|| em.getCoveredText().trim().toLowerCase().endsWith(" pill"))) {
+											|| em.getCoveredText().trim().toLowerCase().endsWith(" pill")
+											|| em.getCoveredText().trim().toLowerCase().endsWith(" shot")
+											|| em.getCoveredText().trim().toLowerCase().endsWith(" vaccine"))) {
 										at.setAnnotator(at.getAnnotator() + "_medicationExcludedWords");
 										medicationWordsExcluded.add(em.getCoveredText().trim().toLowerCase());
 										if (debugMode) {
@@ -632,6 +687,11 @@ public class CASXMI2Knowtator {
 										annotations.add(at);
 									}
 								}
+								//else if (sText.contains(" vaccine") || sText.contains(" shot") || sText.contains(" booster")) {
+								//	at.getAnnotation().setAnnotationClass("Discussion_of_Medications");
+								//	//at.setAnnotator(at.getAnnotator() + "_unimplemented");
+								//	annotations.add(at);
+								//}
 								else {
 									at.getAnnotation().setAnnotationClass("Diagnosis");
 									at.setAnnotator(at.getAnnotator() + "_unimplemented");
