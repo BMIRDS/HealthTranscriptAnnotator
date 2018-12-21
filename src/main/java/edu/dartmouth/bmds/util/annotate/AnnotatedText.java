@@ -1,6 +1,8 @@
 package edu.dartmouth.bmds.util.annotate;
 
 import java.util.Date;
+import java.util.Iterator;
+import java.util.Set;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -74,6 +76,26 @@ public class AnnotatedText {
 	
 	public void setAnnotator(String annotator) {
 		this.annotator = annotator;
+	}
+	
+	public AnnotatedText firstSpanContaining(Set<AnnotatedText> annotations) {
+		
+		AnnotatedText atMatch = null;
+		boolean found = false;
+		
+		Iterator<AnnotatedText> annotatedTextIterator = annotations.iterator();
+		
+		while (!found && annotatedTextIterator.hasNext()) {
+			atMatch = annotatedTextIterator.next();
+			
+			found = (this.spanStart >= atMatch.spanStart) && (this.spanEnd <= atMatch.spanEnd);
+		}
+				
+		if (!found) {
+			atMatch = null;
+		}
+		
+		return atMatch;
 	}
 	
 	public void writeKnowtator(XMLStreamWriter xsw) throws XMLStreamException {

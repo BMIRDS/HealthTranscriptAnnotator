@@ -3,7 +3,7 @@ Activated Charcoal
 Alfalfa
 Aloe Vera
 American Ginseng
-Aristolochic Acids
+Aristolochic Acid
 Arnica
 Ashwagandha
 Asian Ginseng
@@ -31,12 +31,16 @@ Butterbur
 
 Calcium
 Calendula
-Cancell/Cantron/Protocel
+Cancell
+Cantron
+Protocel
 Cannabidiol
 Capsicum
-Cartilage (Bovine and Shark)
+Bovine Cartilage
+Shark  Cartilage
 Cascara Sagrada
 Cat's Claw
+Cats Claw
 Chamomile
 Chasteberry
 Chondroitin Sulfate
@@ -47,27 +51,32 @@ Coconut Oil
 Coconut Water
 Cod Liver Oil
 Coenzyme Q10
-Colloidal Silver Products
+CoQ10
+Colloidal Silver
 Cranberry
 Creatine
 
 Dandelion
 Deer Velvet
 Devil's Claw
+Devils Claw
 DHEA
 Dong Quai
 
 Echinacea
 Ephedra
-Essiac/Flor-Essence
+Essiac
+Flor-Essence
 Eucalyptus
-European Elder (Elderberry)
+European Elder
+Elderberry
 European Mistletoe
 Evening Primrose Oil
 
 Fenugreek
 Feverfew
-Flaxseed and Flaxseed Oil
+Flaxseed
+Flaxseed Oil
 Folate
 Folic Acid
 Fucus Vesiculosus
@@ -108,7 +117,8 @@ Kava
 
 
 Lactobacillus
-Laetrile/Amygdalin
+Laetrile
+Amygdalin
 L-Arginine
 Lavender
 Licorice Root
@@ -126,7 +136,7 @@ Maritime Pine
 Methylsulfonylmethane
 Milk Thistle
 Milk Thistle
-Mistletoe Extracts
+Mistletoe Extract
 
 
 Niacin
@@ -135,8 +145,10 @@ Noni
 
 Oats
 Olive
-Omega-3 Supplements: An Introduction
-Omega-6 Fatty Acids
+Omega - 3
+Omega 3
+Omega - 6
+Omega 6
 Oregano
 Oscillococcinum
 
@@ -148,9 +160,10 @@ PC-SPES
 Peanut Oil
 Pennyroyal
 Peppermint Oil
-Phosphate Salts
+Phosphate Salt
 Pomegranate
-Probiotics: In Depth
+Probiotic
+Probiotics
 Propolis
 
 Raspberry Ketone
@@ -163,10 +176,12 @@ Roman Chamomile
 Rose Hip
 
 Saccharomyces Boulardii
-S-Adenosyl-L-Methionine (SAMe)
+S-Adenosyl-L-Methionine
+/*SAMe*/
 Sage
 Saw Palmetto
-Selected Vegetables/Sun's Soup
+Sun's Soup
+Suns Soup
 Selenium
 Senna
 Shark Cartilage
@@ -175,6 +190,11 @@ Slippery Elm
 Soy
 Spearmint
 St. John's Wort
+St John's Wort
+Staint John's Wort
+St. Johns Wort
+St Johns Wort
+Staint Johns Wort
 Stevia
 
 
@@ -186,8 +206,9 @@ Turmeric
 Valerian
 Vitamin A
 Vitamin B12
+B12
 Vitamin B6
-Vitamin B6
+B6
 Vitamin C
 Vitamin D
 Vitamin E

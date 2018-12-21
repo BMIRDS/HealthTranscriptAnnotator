@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -28,6 +29,7 @@ import org.apache.commons.cli.*;
 import org.apache.ctakes.typesystem.type.refsem.OntologyConcept;
 import org.apache.ctakes.typesystem.type.refsem.UmlsConcept;
 import org.apache.ctakes.typesystem.type.structured.DocumentPath;
+import org.apache.ctakes.typesystem.type.syntax.WordToken;
 import org.apache.ctakes.typesystem.type.textsem.AnatomicalSiteMention;
 import org.apache.ctakes.typesystem.type.textsem.DiseaseDisorderMention;
 import org.apache.ctakes.typesystem.type.textsem.EventMention;
@@ -145,6 +147,26 @@ public class CASXMI2Knowtator {
 			Entry<String, Integer> termEntry = termCountEntryIterator.next();
 			outputStream.println(termEntry.getKey() + ", " + termEntry.getValue());
 		}
+	}
+	
+	public static AnnotatedText annotateVHS(Set<AnnotatedText> annotations, String vhsString, int begin, int end) {
+		AnnotatedText at = new AnnotatedText(begin, end, vhsString);
+		
+        HashMap<String, Annotation> annotationMap = new HashMap<String, Annotation>();
+		
+		
+		String cs = "VitaminHerbSupplement";
+			
+		Annotation a = annotationMap.get(cs);
+		if (a == null) {
+			a = at.addAnnotation("Discussion_of_VitaminHerbSupplement");
+			a.addAttribute("codingScheme", cs);
+			annotationMap.put(cs, a);
+		}
+
+		//a.addAttribute("preferredText", ???);
+		
+		return at;
 	}
 	
 	public static AnnotatedText annotateUMLSConcept(Set<AnnotatedText> annotations, IdentifiedAnnotation em) {
@@ -287,7 +309,7 @@ public class CASXMI2Knowtator {
 		while (sentences.hasNext() && (foundSentence == null)) {
         	Sentence s = sentences.next();
 
-        	System.out.print("Sentence[" + s.getSentenceNumber() + "](" + s.getBegin() + ", " + s.getEnd() + "):");        	
+        	//System.out.print("Sentence[" + s.getSentenceNumber() + "](" + s.getBegin() + ", " + s.getEnd() + "):");        	
         	
         	if ((spanStart >= s.getBegin()) && (spanEnd <= s.getEnd())) {
         		foundSentence = s;
@@ -358,6 +380,8 @@ public class CASXMI2Knowtator {
 				TreeSet<String> diagnosisWordsExcluded = new TreeSet<String>();
 				
 				TreeSet<String> vitaminSupplementIncludeWords = new TreeSet<String>();
+				
+				List<String[]> vitaminSupplementIncludeWordsList;
 								
 				if (line.hasOption("e")) {
 
@@ -438,15 +462,23 @@ public class CASXMI2Knowtator {
 				File vitaminSupplementIncludeWordsFile = new File(configDirectory, "VitaminSupplementWords.txt");
 				
 				if (vitaminSupplementIncludeWordsFile.exists()) {
-					List<String> words = Files.readAllLines(vitaminSupplementIncludeWordsFile.toPath(), StandardCharsets.UTF_8);
+					List<String> terms = Files.readAllLines(vitaminSupplementIncludeWordsFile.toPath(), StandardCharsets.UTF_8);
 
-					for (String word : words) {
+					vitaminSupplementIncludeWordsList = new ArrayList<String[]>(terms.size());
+					
+					for (String term : terms) {
 						
-						String tword = word.trim().toLowerCase();
-						if (!tword.isEmpty()) {
-							vitaminSupplementIncludeWords.add(tword);
+						String tterm = term.trim().toLowerCase();
+						if (!tterm.isEmpty()) {
+							vitaminSupplementIncludeWords.add(tterm);
+							
+							String[] words = tterm.split("\\s+");
+							vitaminSupplementIncludeWordsList.add(words);
 						}
 					}
+				}
+				else {
+					vitaminSupplementIncludeWordsList = new ArrayList<String[]>(0);
 				}
 				
 				FilenameFilter filter = new FilenameExtensionFilter("xmi");
@@ -543,30 +575,13 @@ public class CASXMI2Knowtator {
 							}
 				        }
 				        
-				        Iterator<Sentence> si = JCasUtil.iterator(jCas, Sentence.class);
+				        AnnotatedText at;
+
 				        
-				        while (si.hasNext()) {
-				        	Sentence s = si.next();
-
-				        	sps.print("Sentence[" + s.getSentenceNumber() + "](" + s.getBegin() + ", " + s.getEnd() + "):");
-							sps.println(docText.substring(s.getBegin(), s.getEnd()));
-							
-							Iterator<String> vwi = vitaminSupplementIncludeWords.iterator();
-							while (vwi.hasNext()) {
-								
-								String vhs = vwi.next();
-								if (s.getCoveredText().toLowerCase().trim().contains(vhs.toLowerCase().trim())) {
-									sps.print("Sentence[" + s.getSentenceNumber() + "] contains: " +vhs);
-								}
-							}
-
-							sentencesMap.put(s.getSentenceNumber(), s);
-							//System.out.println(s);
-				        }
+				        
 				        
 				        Iterator<EventMention> ei = JCasUtil.iterator(jCas, EventMention.class);
 				        
-				        AnnotatedText at;
 				        
 				        while (ei.hasNext()) {
 							EventMention em = ei.next();
@@ -587,7 +602,8 @@ public class CASXMI2Knowtator {
 							String sText = null;
 							
 							try {
-								s = sentencesMap.get(Integer.parseInt(em.getSentenceID()));
+								s = sentenceForSpan(JCasUtil.iterator(jCas, Sentence.class), em.getBegin(), em.getEnd());
+								//s = sentencesMap.get(Integer.parseInt(em.getSentenceID()));
 								sText = s.getCoveredText();
 							}
 							catch (NumberFormatException e) {
@@ -673,7 +689,7 @@ public class CASXMI2Knowtator {
 							}
 							else if (em instanceof DiseaseDisorderMention) {
 								at = annotateUMLSConcept(annotations, em);
-								
+																
 								if (diagnosisExcludeWords.contains(em.getCoveredText().trim().toLowerCase())) {
 									at.setAnnotator(at.getAnnotator() + "_diagnosisExcludedWords");
 									diagnosisWordsExcluded.add(em.getCoveredText().trim().toLowerCase());
@@ -687,11 +703,11 @@ public class CASXMI2Knowtator {
 										annotations.add(at);
 									}
 								}
-								//else if (sText.contains(" vaccine") || sText.contains(" shot") || sText.contains(" booster")) {
-								//	at.getAnnotation().setAnnotationClass("Discussion_of_Medications");
+								else if (sText.contains(" vaccine") || sText.contains(" shot") || sText.contains(" booster") || sText.contains(" pill")) {
+									at.getAnnotation().setAnnotationClass("Discussion_of_Medications");
 								//	//at.setAnnotator(at.getAnnotator() + "_unimplemented");
-								//	annotations.add(at);
-								//}
+									annotations.add(at);
+								}
 								else {
 									at.getAnnotation().setAnnotationClass("Diagnosis");
 									at.setAnnotator(at.getAnnotator() + "_unimplemented");
@@ -754,6 +770,134 @@ public class CASXMI2Knowtator {
 							at.setAnnotator(at.getAnnotator() + "_unimplemented");
 							//annotations.add(at);
 				        }
+				        				        
+				        SortedMap<Integer, WordToken> wtSortedMap = new TreeMap<Integer, WordToken>();
+				        
+				        Iterator<WordToken> wti = JCasUtil.iterator(jCas, WordToken.class);
+
+				        while (wti.hasNext()) {
+				        	WordToken wt = wti.next();
+				        	
+				        	wtSortedMap.put(wt.getTokenNumber(), wt);
+				        }
+				        
+				        Iterator<Integer> wtmi = wtSortedMap.keySet().iterator();
+				        
+				        while (wtmi.hasNext()) {
+				        	Integer wtKey = wtmi.next();
+				        	WordToken wt = wtSortedMap.get(wtKey);
+				        	
+				        	String wtText = wt.getCoveredText().trim().toLowerCase();
+				        	
+				        	Iterator<String[]> vhsTermIterator = vitaminSupplementIncludeWordsList.iterator();
+				        	
+				        	while (vhsTermIterator.hasNext()) {
+				        		String[] vhsTerm = vhsTermIterator.next();
+				        		
+				        		if (wtText.equals(vhsTerm[0])) {
+				        			
+				        			if ((vhsTerm.length) > 1 && wtmi.hasNext()) { // compare the rest of the words in the term
+				        				
+				        				boolean matchingSoFar = true;
+				        				
+				        				SortedMap<Integer, WordToken> remainingWords = wtSortedMap.tailMap(wtKey);
+				        				Iterator<Integer> rwmj = remainingWords.keySet().iterator();
+				        				
+				        				int j = 1;
+				        				WordToken mostRecentWordToken = remainingWords.get(rwmj.next());;
+
+				        				
+				        				while ((j < vhsTerm.length) &&  rwmj.hasNext() && matchingSoFar) {
+				        					
+				        					mostRecentWordToken = remainingWords.get(rwmj.next());
+				        					
+				        					if (!vhsTerm[j].equals(mostRecentWordToken.getCoveredText().trim().toLowerCase())) {
+				        						matchingSoFar = false;
+				        					}
+				        					
+				        					j++;
+				        				}
+				        				
+				        				if (matchingSoFar) {
+				        					String matchedText = vhsTerm[0];
+				        					
+				        					for (int k = 1; k < vhsTerm.length; k++) {
+				        						matchedText = matchedText + " " + vhsTerm[k];
+				        					}
+				        					
+				        					at = annotateVHS(annotations, matchedText, wt.getBegin(), mostRecentWordToken.getEnd());
+
+				        					if (at.firstSpanContaining(annotations) == null) {
+				        						at.getAnnotation().setAnnotationClass("Discussion_of_Medications");
+				        						annotations.add(at);
+				        					}
+				        				}
+
+				        			}
+				        			else {
+				        				at = annotateVHS(annotations, wtText, wt.getBegin(), wt.getEnd());
+
+			        					if (at.firstSpanContaining(annotations) == null) {
+			        						at.getAnnotation().setAnnotationClass("Discussion_of_Medications");
+			        						annotations.add(at);
+			        					}
+				        			}
+				        		}
+				        		
+				        	}
+				        			
+				        	
+				        	
+				        }
+			/*	        
+				        // old sentence based matching code for VHS dictionary
+				        Iterator<Sentence> si = JCasUtil.iterator(jCas, Sentence.class);
+				        
+				        while (si.hasNext()) {
+				        	Sentence s = si.next();
+
+				        	sps.print("Sentence[" + s.getSentenceNumber() + "](" + s.getBegin() + ", " + s.getEnd() + "):");
+							sps.println(docText.substring(s.getBegin(), s.getEnd()));
+							
+							Iterator<String> vwi = vitaminSupplementIncludeWords.iterator();
+							while (vwi.hasNext()) {
+								
+								String vhs = vwi.next();
+								
+								int index = s.getCoveredText().toLowerCase().trim().indexOf(vhs.toLowerCase().trim());
+								
+								if (index >= 0) {
+									System.out.println("Sentence[" + s.getSentenceNumber() + "] contains: " +vhs);
+									
+									at = annotateVHS(annotations, vhs, s.getBegin() + index, s.getBegin() + index + vhs.length()); // this isn't perfect as the text has been trimmmed.
+									
+									if (at.firstSpanContaining(annotations) == null) {
+									    at.getAnnotation().setAnnotationClass("Discussion_of_Medications");
+								        annotations.add(at);
+									}
+								    
+								    while ((index >= 0) && (index + 1 + vhs.toLowerCase().trim().length() < s.getCoveredText().length())) {
+								    	
+								    	index = s.getCoveredText().toLowerCase().trim().indexOf(vhs.toLowerCase().trim(), index + 1);
+								    	
+								    	if (index >= 0) {
+											System.out.println("Sentence[" + s.getSentenceNumber() + "] contains: " +vhs);
+											
+											at = annotateVHS(annotations, vhs, s.getBegin() + index, s.getBegin() + index + vhs.length()); // this isn't perfect as the text has been trimmmed.
+											
+											if (at.firstSpanContaining(annotations) == null) {
+											    at.getAnnotation().setAnnotationClass("Discussion_of_Medications");
+										        annotations.add(at);
+											}
+								    	}
+								    }
+								}
+							}
+
+							sentencesMap.put(s.getSentenceNumber(), s);
+							//System.out.println(s);
+				        }
+				        /*
 				        
 				        /*
 				        Iterator<MedicationMention> ei = JCasUtil.iterator(jCas, MedicationMention.class);
