@@ -29,6 +29,8 @@ import org.apache.commons.cli.*;
 import org.apache.ctakes.typesystem.type.refsem.OntologyConcept;
 import org.apache.ctakes.typesystem.type.refsem.UmlsConcept;
 import org.apache.ctakes.typesystem.type.structured.DocumentPath;
+import org.apache.ctakes.typesystem.type.syntax.NumToken;
+import org.apache.ctakes.typesystem.type.syntax.PunctuationToken;
 import org.apache.ctakes.typesystem.type.syntax.WordToken;
 import org.apache.ctakes.typesystem.type.textsem.AnatomicalSiteMention;
 import org.apache.ctakes.typesystem.type.textsem.DiseaseDisorderMention;
@@ -779,6 +781,92 @@ public class CASXMI2Knowtator {
 				        	WordToken wt = wti.next();
 				        	
 				        	wtSortedMap.put(wt.getTokenNumber(), wt);
+				        }
+				        
+				        SortedMap<Integer, NumToken> ntSortedMap = new TreeMap<Integer, NumToken>();
+				        
+				        Iterator<NumToken> nti = JCasUtil.iterator(jCas, NumToken.class);
+
+				        while (nti.hasNext()) {
+				        	NumToken nt = nti.next();
+				        	
+				        	ntSortedMap.put(nt.getTokenNumber(), nt);
+				        }
+				        
+				        Iterator<PunctuationToken> pti = JCasUtil.iterator(jCas, PunctuationToken.class);
+
+				        while (pti.hasNext()) {
+				        	PunctuationToken pt = pti.next();
+				        	
+				        	if (pt.getPartOfSpeech().equals("HYPH")) {
+				        		int tokenNumber = pt.getTokenNumber();
+				        		
+				        		WordToken wtBefore = wtSortedMap.get(tokenNumber - 1);
+				        		WordToken wtAfter = wtSortedMap.get(tokenNumber + 1);
+				        		NumToken ntBefore = ntSortedMap.get(tokenNumber - 1);
+				        		NumToken ntAfter = ntSortedMap.get(tokenNumber + 1);
+				        		
+				        		if ((wtBefore != null) && (wtAfter != null)) {
+				        			String hyphenatedWord = wtBefore.getCoveredText() + "-" + wtAfter.getCoveredText();
+				        			
+				        			Iterator<String> vhsTermIterator = vitaminSupplementIncludeWords.iterator();
+						        	
+						        	while (vhsTermIterator.hasNext()) {
+						        		String vhsTerm = vhsTermIterator.next();
+						        		
+						        		if (hyphenatedWord.toLowerCase().trim().equals(vhsTerm)) {
+							        		System.out.println("******* Matched w-w comapre: " + hyphenatedWord + "==" + vhsTerm);
+
+						        			at = annotateVHS(annotations, hyphenatedWord, wtBefore.getBegin(), wtAfter.getEnd());
+
+				        					if (at.firstSpanContaining(annotations) == null) {
+				        						at.getAnnotation().setAnnotationClass("Discussion_of_Medications");
+				        						annotations.add(at);
+				        					}
+						        		}
+						        	}
+				        		}
+				        		else if ((wtBefore != null) && (ntAfter != null)) {
+				        			String hyphenatedWord = wtBefore.getCoveredText() + "-" + ntAfter.getCoveredText();
+				        			
+				        			Iterator<String> vhsTermIterator = vitaminSupplementIncludeWords.iterator();
+						        	
+						        	while (vhsTermIterator.hasNext()) {
+						        		String vhsTerm = vhsTermIterator.next();
+						        		
+						        		if (hyphenatedWord.toLowerCase().trim().equals(vhsTerm)) {
+							        		System.out.println("******* Matched w-n comapre: " + hyphenatedWord + "==" + vhsTerm);
+
+						        			at = annotateVHS(annotations, hyphenatedWord, wtBefore.getBegin(), ntAfter.getEnd());
+
+				        					if (at.firstSpanContaining(annotations) == null) {
+				        						at.getAnnotation().setAnnotationClass("Discussion_of_Medications");
+				        						annotations.add(at);
+				        					}
+						        		}
+						        	}
+				        		}
+				        		else if ((ntBefore != null) && (wtAfter != null)) {
+				        			String hyphenatedWord = ntBefore.getCoveredText() + "-" + wtAfter.getCoveredText();
+				        			
+				        			Iterator<String> vhsTermIterator = vitaminSupplementIncludeWords.iterator();
+						        	
+						        	while (vhsTermIterator.hasNext()) {
+						        		String vhsTerm = vhsTermIterator.next();
+						        		
+						        		if (hyphenatedWord.toLowerCase().trim().equals(vhsTerm)) {
+							        		System.out.println("******* Matched n-w comapre: " + hyphenatedWord + "==" + vhsTerm);
+
+						        			at = annotateVHS(annotations, hyphenatedWord, ntBefore.getBegin(), wtAfter.getEnd());
+
+				        					if (at.firstSpanContaining(annotations) == null) {
+				        						at.getAnnotation().setAnnotationClass("Discussion_of_Medications");
+				        						annotations.add(at);
+				        					}
+						        		}
+						        	}
+				        		}
+				        	}
 				        }
 				        
 				        Iterator<Integer> wtmi = wtSortedMap.keySet().iterator();
