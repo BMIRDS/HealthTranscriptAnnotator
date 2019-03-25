@@ -439,7 +439,7 @@ public class CASXMI2Knowtator {
 						}
 					}
 					
-					File diagnosisExcludeWordsFile = new File(configDirectory, "DiagnosisSymptomsExcludeWords.txt");
+					File diagnosisExcludeWordsFile = new File(configDirectory, "DiagnosisExcludeWords.txt");
 
 					if (diagnosisExcludeWordsFile.exists()) {
 						List<String> words = Files.readAllLines(diagnosisExcludeWordsFile.toPath(), StandardCharsets.UTF_8);
@@ -451,7 +451,7 @@ public class CASXMI2Knowtator {
 					
 					File diagnosisIncludeWordsFile = new File(configDirectory, "DiagnosisIncludeWords.txt");
 
-					if (sspIncludeWordsFile.exists()) {
+					if (diagnosisIncludeWordsFile.exists()) {
 						List<String> words = Files.readAllLines(diagnosisIncludeWordsFile.toPath(), StandardCharsets.UTF_8);
 
 						for (String word : words) {
@@ -706,6 +706,9 @@ public class CASXMI2Knowtator {
 									}
 								}
 								else if (sText.contains(" vaccine") || sText.contains(" shot") || sText.contains(" booster") || sText.contains(" pill")) {
+									System.out.println("************************************** DiseaseDisorderMention with vaccine, shot, booster, pill found");
+									System.out.println(sText);
+									System.out.println(em.getCoveredText());
 									at.getAnnotation().setAnnotationClass("Discussion_of_Medications");
 								//	//at.setAnnotator(at.getAnnotator() + "_unimplemented");
 									annotations.add(at);
