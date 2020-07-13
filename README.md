@@ -24,6 +24,7 @@ HTA in our work uses the cTAKES [Default Clinincal Pipeline](https://cwiki.apach
 
 From an installed cTAKES, the Default Clinical Pipeline is invoked:
 
+<<<<<<< HEAD
 `bin/runClinicalPipeline  -i {inputDirectory}  --xmiOut {outputDirectory}  --user {umlsUsername}  --pass {umlsPassword}`
 
 ## 3. Health Transcript Annotator
@@ -46,5 +47,21 @@ Transcripts of 85 patients visiting with their primary care physician were used 
 
 
 ### Results
+=======
+`bin/runClinicalPipeline  -i inputDirectory  --xmiOut outputDirectory  --user umlsUsername  --pass umlsPassword`
+
+## 3. Health Transcript Annotator
+The Health Transcript Annotator takes a folder of cTAKES output (CAS .XMI files) as its input.
+
+
+
+## 4. Evaluation
+### Dataset 
+
+
+## 5. Results
+
+
+>>>>>>> branch 'master' of https://github.com/BMIRDS/HealthTranscriptAnnotator.git
 
 ![Medication Results](./figures/MedicationResults.png)
