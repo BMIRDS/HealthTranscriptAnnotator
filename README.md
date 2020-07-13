@@ -44,6 +44,10 @@ The Health Transcript Annotator is a command line Java application which takes a
 ### Dataset 
 Transcripts of 85 patients visiting with their primary care physician were used as our dataset. These visits were audio recorded and transcribed by a HIPAA compliant commercial medical transcription service. Ten transcripts were randomly selected and used as a development set. Another ten of the  transcripts were randomly selected as a validation set for our model. The remaining 65 transcripts were held-out as a test set for evaluation.
 
+We created a set of gold standard medication mention annotations in our dataset based on the work of expert annotators. All medication mentions in our evaluation set where the two expert annotators agreed were kept in this gold standard set. A physician, trained in the method used by the annotators, served as an adjudicator to resolve the disagreements between our annotators.
+
 ### Results
+
+Using the gold standard 65 transcript evaluation set, we compared results from Health Transcript Annotator to the raw medication mentions from cTAKES using the same set of transcripts, as well as the medication name annotations of publicly available MedEx-UIMA 1.3.7 and MedXN 1.0.1 software.
 
 ![Medication Results](./figures/MedicationResults.png)
