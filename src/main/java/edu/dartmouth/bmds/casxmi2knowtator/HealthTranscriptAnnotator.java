@@ -61,7 +61,7 @@ import org.apache.uima.util.InvalidXMLException;
 import org.apache.uima.util.XMLInputSource;
 import org.xml.sax.SAXException;
 
-public class CASXMI2Knowtator {
+public class HealthTranscriptAnnotator {
 	
 	private static boolean debugMode = false;
 
@@ -78,6 +78,9 @@ public class CASXMI2Knowtator {
 	
 	protected static String[] tuiToFilterForMeciationsOverlappingDiagnoses = { "T129" };
 	protected static String[] tuiToFilterForMeciationsOverlappingProcedures = { "T109", "T116"};
+	
+	protected static String[] tuiForTestAndImaging = { "T059", "T060" };
+	protected static String[] tuiForTreatmentAndProcedure = { "T061"};
 	
 	protected static String[] substringToFilterForAllergens = { "allergenic" };
 	
@@ -381,6 +384,12 @@ public class CASXMI2Knowtator {
 				TreeSet<String> diagnosisExcludeWords = new TreeSet<String>();
 				TreeSet<String> diagnosisWordsExcluded = new TreeSet<String>();
 				
+				TreeSet<String> testProcedureExcludeWords = new TreeSet<String>();
+				TreeSet<String> testProcedureWordsExcluded = new TreeSet<String>();
+				
+				TreeSet<String> treatmentProcedureExcludeWords = new TreeSet<String>();
+				TreeSet<String> treatmentProcedureWordsExcluded = new TreeSet<String>();
+				
 				TreeSet<String> vitaminSupplementIncludeWords = new TreeSet<String>();
 				
 				List<String[]> vitaminSupplementIncludeWordsList;
@@ -393,9 +402,15 @@ public class CASXMI2Knowtator {
 						List<String> words = Files.readAllLines(commonWordsFile.toPath(), StandardCharsets.UTF_8);
 
 						for (String word : words) {
-							medicationExcludeWords.add(word.trim().toLowerCase());
-							sspExcludeWords.add(word.trim().toLowerCase());
-							diagnosisExcludeWords.add(word.trim().toLowerCase());
+							
+							String trimmedWord = word.trim().toLowerCase();
+							
+							medicationExcludeWords.add(trimmedWord);
+							//sspExcludeWords.add(trimmedWord);
+							//diagnosisExcludeWords.add(trimmedWord);
+							testProcedureExcludeWords.add(trimmedWord);
+							treatmentProcedureExcludeWords.add(trimmedWord);				
+							
 						}
 					}
 					
@@ -456,6 +471,46 @@ public class CASXMI2Knowtator {
 
 						for (String word : words) {
 							diagnosisExcludeWords.remove(word.trim().toLowerCase());
+						}
+					}
+					
+					File testProcedureExcludeWordsFile = new File(configDirectory, "TestProcedureExcludeWords.txt");
+
+					if (testProcedureExcludeWordsFile.exists()) {
+						List<String> words = Files.readAllLines(testProcedureExcludeWordsFile.toPath(), StandardCharsets.UTF_8);
+
+						for (String word : words) {
+							testProcedureExcludeWords.add(word.trim().toLowerCase());
+						}
+					}
+					
+					File testProcedureIncludeWordsFile = new File(configDirectory, "TestProcedureIncludeWords.txt");
+
+					if (testProcedureIncludeWordsFile.exists()) {
+						List<String> words = Files.readAllLines(testProcedureIncludeWordsFile.toPath(), StandardCharsets.UTF_8);
+
+						for (String word : words) {
+							testProcedureExcludeWords.remove(word.trim().toLowerCase());
+						}
+					}
+					
+					File treatmentProcedureExcludeWordsFile = new File(configDirectory, "TreatmentProcedureExcludeWords.txt");
+
+					if (treatmentProcedureExcludeWordsFile.exists()) {
+						List<String> words = Files.readAllLines(treatmentProcedureExcludeWordsFile.toPath(), StandardCharsets.UTF_8);
+
+						for (String word : words) {
+							treatmentProcedureExcludeWords.add(word.trim().toLowerCase());
+						}
+					}
+					
+					File treatmentProcedureIncludeWordsFile = new File(configDirectory, "TreatmentProcedureIncludeWords.txt");
+
+					if (treatmentProcedureIncludeWordsFile.exists()) {
+						List<String> words = Files.readAllLines(treatmentProcedureIncludeWordsFile.toPath(), StandardCharsets.UTF_8);
+
+						for (String word : words) {
+							treatmentProcedureExcludeWords.remove(word.trim().toLowerCase());
 						}
 					}
 
@@ -714,8 +769,8 @@ public class CASXMI2Knowtator {
 									annotations.add(at);
 								}
 								else {
-									at.getAnnotation().setAnnotationClass("Diagnosis");
-									at.setAnnotator(at.getAnnotator() + "_unimplemented");
+									at.getAnnotation().setAnnotationClass("Medical Condition");
+									//at.setAnnotator(at.getAnnotator() + "_unimplemented");
 									annotations.add(at);
 								}
 				        	}
@@ -744,9 +799,40 @@ public class CASXMI2Knowtator {
 							else if (em instanceof ProcedureMention) {
 								at = annotateUMLSConcept(annotations, em);
 								
-								at.setAnnotator(at.getAnnotator() + "_unimplemented");
-								if (debugMode) {
-									annotations.add(at);
+								
+								if (at.getAnnotation().containsAttributeValue("TUI", tuiForTestAndImaging)) {
+									
+									if (testProcedureExcludeWords.contains(em.getCoveredText().trim().toLowerCase())) {
+										at.setAnnotator(at.getAnnotator() + "_testProcedureExcludedWords");
+										testProcedureWordsExcluded.add(em.getCoveredText().trim().toLowerCase());
+										if (debugMode) {
+											annotations.add(at);
+										}
+									}
+									else {
+										at.getAnnotation().setAnnotationClass("Test & Imaging");
+										annotations.add(at);
+									}
+								}
+								else if (at.getAnnotation().containsAttributeValue("TUI", tuiForTreatmentAndProcedure)) {
+									if (treatmentProcedureExcludeWords.contains(em.getCoveredText().trim().toLowerCase())) {
+										at.setAnnotator(at.getAnnotator() + "_treatmentProcedureExcludedWords");
+										treatmentProcedureWordsExcluded.add(em.getCoveredText().trim().toLowerCase());
+										if (debugMode) {
+											annotations.add(at);
+										}
+									}
+									else {			
+									    at.getAnnotation().setAnnotationClass("Treatment & Procedure");
+									    annotations.add(at);
+									}
+								}
+								else {
+									at.getAnnotation().setAnnotationClass("cTAKES Procedures");
+									at.setAnnotator(at.getAnnotator() + "_unimplemented");
+									if (debugMode) {
+										annotations.add(at);
+									}
 								}
 				        	}							
 							
@@ -1058,6 +1144,9 @@ public class CASXMI2Knowtator {
 				writeSet(new File(outputDirectory, "DiagnosisWordsExcluded.txt"), diagnosisWordsExcluded);
 				writeSet(new File(outputDirectory, "MedicationWordsExcluded.txt"), medicationWordsExcluded);
 				writeSet(new File(outputDirectory, "SignsSymptomsWordsExcluded.txt"), sspWordsExcluded);
+				writeSet(new File(outputDirectory, "TestProcedureWordsExcluded.txt"), testProcedureWordsExcluded);
+				writeSet(new File(outputDirectory, "TreatmentProcedureWordsExcluded.txt"), treatmentProcedureWordsExcluded);
+
 	        }
 	        catch (IOException e) {
 				// TODO Auto-generated catch block

@@ -3,15 +3,15 @@ apply plugin: 'eclipse'
 apply plugin: 'application'
 apply plugin: 'distribution'
 
-mainClassName = 'edu.dartmouth.bmds.casxmi2knowtator.CASXMI2Knowtator'
+mainClassName = 'edu.dartmouth.bmds.casxmi2knowtator.HealthTranscriptAnnotator'
 
 sourceCompatibility = 1.7
 version = '0.7.1'
 
 jar {
     manifest {
-        attributes 'Main-Class': 'edu.dartmouth.bmds.casxmi2knowtator.CASXMI2Knowtator',
-                   'Implementation-Title': 'CASXMI2Knowtator',
+        attributes 'Main-Class': 'edu.dartmouth.bmds.casxmi2knowtator.HealthTranscriptAnnotator',
+                   'Implementation-Title': 'HealthTranscriptAnnotator',
                    'Implementation-Version': version
     }
 }
