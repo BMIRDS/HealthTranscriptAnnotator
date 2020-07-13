@@ -31,7 +31,7 @@ The Health Transcript Annotator is a command line Java application which takes a
 
 `java java edu.dartmouth.bmds.casxmi2knowtator.HealthTranscriptAnnotator -e -d -c {configDirectory} -i {inputDirectory} -o {outputDirectory}`
 
-###Parameters
+### Parameters
 | Param | Description |
 | --- | ----------- |
 | -d | Debug - annotates some items that are excluded with the reason as the annotation author |
