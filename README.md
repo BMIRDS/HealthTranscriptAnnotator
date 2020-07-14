@@ -50,4 +50,11 @@ We created a set of gold standard medication mention annotations in our dataset 
 
 Using the gold standard 65 transcript evaluation set, we compared results from Health Transcript Annotator to the raw medication mentions from cTAKES using the same set of transcripts, as well as the medication name annotations of publicly available MedEx-UIMA 1.3.7 and MedXN 1.0.1 software.
 
+|     Model           |     # True Positives    |     # False Positives    |     # False Negatives    |     Precision    |     Recall    |     F-Score    |
+|---------------------|-------------------------|--------------------------|--------------------------|------------------|---------------|----------------|
+|     cTAKES          |     1119                |     2814                 |     163                  |     28.5%        |     87.3%     |     42.9%      |
+|     MedEx-UIMA      |     830                 |     1215                 |     292                  |     40.6%        |     74.0%     |     52.4%      |
+|     MedXN           |     832                 |     318                  |     432                  |     72.3%        |     65.8%     |     68.9%      |
+|     Our Approach    |     1062                |     168                  |     206                  |     86.3%        |     83.8%     |     85.0%      |
+
 ![Medication Results](./figures/MedicationResults.png)
