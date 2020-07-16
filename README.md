@@ -28,6 +28,11 @@ Use gradle to build a distribution of the Health Transcript Annotator:
 `gradle assembleDist`
 This will create a build in the "build" folder and a complete distribution in the "build/distributions" folder.
 
+To use the distribution, unzip the zip file in the "distributions" folder to where you wish to install the distribution. The distribution includes:
+- A "bin" folder with shell scripts to run the program.
+- A "config" folder with configuration files.
+- A "lib" folder with built jar files used by the program.
+
 # Usage
 
 ## 1. Dataset
@@ -48,7 +53,9 @@ From an installed cTAKES, the Default Clinical Pipeline is invoked:
 ## 3. Health Transcript Annotator
 The Health Transcript Annotator is a command line Java application which takes a folder of cTAKES output (CAS .XMI files) as its input (the inputDirectory below would be the outputDirectory of the cTAKES command in the above section).
 
-`java java edu.dartmouth.bmds.casxmi2knowtator.HealthTranscriptAnnotator -e -d -c {configDirectory} -i {inputDirectory} -o {outputDirectory}`
+If you have are in the root folder of a distribution built with gradle:
+
+`./bin/HealthTranscriptAnnotator -e -d -c ./config -i {inputDirectory} -o {outputDirectory}`
 
 ### Parameters
 | Param | Description |
