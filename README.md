@@ -6,8 +6,27 @@ By Craig Ganoe and Saeed Hassanpour
 ![Medication Approach](./figures/MedicationApproach.png)
 
 ## Dependencies
-* [Java 7+](https://www.tensorflow.org/)
+* [Java Development Kit 8 or newer](https://jdk.java.net/)
+* [Gradle build tool](https://gradle.org/install/)
 * [Apache cTAKES 4.0.0](https://ctakes.apache.org/)
+
+_Also see dependencies in [build.gradle](./build.gradle)_
+
+# Build and Installation
+You will need to have a [Java Development Kit 8 or newer](https://jdk.java.net/) installed as well as the [Gradle build tool](https://gradle.org/install/).
+
+Get a copy of the source code here. 
+
+The software also uses a number of 3rd party libraries that are mostly integrated automatically by Gradle. The one exception is MedXN, which we use in comparisons, and there is code here to convert MedXN output to Knowtator format for comparisons. 
+
+Add the MedXN library:
+1. Create a "lib" folder in the root of the source tree if it is not already there.
+2. Download MedXN-101.zip from [sourceforge](https://sourceforge.net/projects/ohnlp/files/MedXN/1.0.1/).
+3. Unzip the MedXN-101.zip file you downloaded, and copy the MedXN-1.0.1.jar in the root folder of the zip file to the "lib" folder in the source code directory.
+
+Use gradle to build a distribution of the Health Transcript Annotator:
+`gradle assembleDist`
+This will create a build in the "build" folder and a complete distribution in the "build/distributions" folder.
 
 # Usage
 
