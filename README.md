@@ -66,6 +66,9 @@ If you have are in the root folder of a distribution built with gradle:
 | -i {inputDirectory} | Directory containing the input CAS XMI files from cTAKES |
 | -o {outputDirectory} | Directory to output annotated files in Knowtator format |
 
+### Output
+For each XMI file, an equivalent file is output in Knowtator format. For medications, the annotations are identified with the class "Discussion\_of\_Medications". The Health Transcript Annotator also identifies classes "Medical Condition", "Test & Imaging", and "Treatment & Procedure" (currently a work in progress).
+
 ## 4. Evaluation
 ### Dataset 
 Transcripts of 85 patients visiting with their primary care physician were used as our dataset. These visits were audio recorded and transcribed by a HIPAA compliant commercial medical transcription service. Ten transcripts were randomly selected and used as a development set. Another ten of the  transcripts were randomly selected as a validation set for our model. The remaining 65 transcripts were held-out as a test set for evaluation.
